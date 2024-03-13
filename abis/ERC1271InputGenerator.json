@@ -1,0 +1,26 @@
+[{
+  "type": "constructor",
+  "inputs": [
+    {
+      "name": "account",
+      "type": "address",
+      "internalType": "contract CoinbaseSmartWallet"
+    },
+    {
+      "name": "hash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+    },
+    {
+      "name": "accountFactory",
+      "type": "address",
+      "internalType": "address"
+    },
+    {
+      "name": "factoryCalldata",
+      "type": "bytes",
+      "internalType": "bytes"
+    }
+  ],
+  "stateMutability": "nonpayable"
+}]

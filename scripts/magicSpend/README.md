@@ -1,0 +1,3 @@
+Running these scripts requires a MagicSpend account deployed with an owner matching a `PRIVATE_KEY` value in an `.env` file in this repo. The network must match whatever network you are using in `scripts/base.ts`.
+
+You can deploy your own MagicSpend using [this script](https://github.com/coinbase/magic-spend/blob/main/script/DeployMagicSpend.s.sol). After deploying, update the address in `wagmi.config.ts` in this repo and run `bun wagmi generate`
