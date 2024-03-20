@@ -85,13 +85,13 @@ export function buildDummySignature({ ownerIndex, challenge }: { ownerIndex: big
   );
 }
 
-export function buildEOADummySignature({ownerIndex} : {ownerIndex: bigint}) {
-  const signatureData = encodeAbiParameters(
-    [{type: "uint"}, {type: "uint"}, {type: "uint8"}],
+export function buildEOADummySignature({ ownerIndex }: { ownerIndex: bigint }) {
+  const signatureData = encodePacked(
+    ["uint", "uint", "uint8"],
     [
-      0n, 
       0n,
-      0
+      0n,
+      0,
     ],
   );
   return encodeAbiParameters(
