@@ -85,6 +85,26 @@ export function buildDummySignature({ ownerIndex, challenge }: { ownerIndex: big
   );
 }
 
+export function buildEOADummySignature({ ownerIndex }: { ownerIndex: bigint }) {
+  const signatureData = encodePacked(
+    ["uint", "uint", "uint8"],
+    [
+      0n,
+      0n,
+      0,
+    ],
+  );
+  return encodeAbiParameters(
+    [SignatureWrapperStruct],
+    [
+      {
+        ownerIndex,
+        signatureData,
+      },
+    ],
+  );
+}
+
 export function buildWebAuthnSignature({
   ownerIndex,
   authenticatorData,
