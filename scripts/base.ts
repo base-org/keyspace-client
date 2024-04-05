@@ -17,7 +17,7 @@ export const client: BundlerClient = createPublicClient({
 }).extend(bundlerActions);
 
 const jwk = JSON.parse(process.env.P256_JWK || "");
-const p256PrivateKey = ECDSA.fromJWK(jwk);
+export const p256PrivateKey = ECDSA.fromJWK(jwk);
 export const authenticatorData = "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000";
 
 ECDSA;
