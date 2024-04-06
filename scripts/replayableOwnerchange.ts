@@ -92,13 +92,16 @@ export async function main() {
   const replayChainAccountBalance = await getBalance(replayChainClient, { address: op.sender });
   const diff = cost - replayChainAccountBalance;
   const ethNeededOnReplayChain = diff > 0 ? diff : 0n;
+  const code = await getBytecode(replayChainClient, { address: op.sender });
+  const needsDeploy = !code;
 
   const senderChainAccountBalance = await getBalance(client, { address: op.sender });
   const estimateReservoirOverhead = parseEther("0.0001");
   const neededOnSenderChain = cost + estimateReservoirOverhead;
-
-  const code = await getBytecode(replayChainClient, { address: op.sender });
-  const needsDeploy = !code;
+  if (needsDeploy) {
+    /// neededOnSenderChain += estimated cost of createAccount call on factory
+    /// estimateReservoirOverhead += parseEther("0.0001")
+  }
   const senderChainCanFundReplayChain = senderChainAccountBalance > neededOnSenderChain + ethNeededOnReplayChain;
 
   const transactions: ReservoirTx[] = [];
