@@ -7,21 +7,22 @@ import {
   Hex,
   hexToBigInt,
   http,
+  parseEther,
   PublicClient,
 } from "viem";
-import { baseSepolia, sepolia } from "viem/chains";
+import { base, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
 
 import { privateKeyToAccount } from "viem/accounts";
-import { writeContract } from "viem/actions";
-import { accountAbi, entryPointAbi, entryPointAddress } from "../generated";
-import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../index";
+import { getBalance, getBytecode, writeContract } from "viem/actions";
+import { accountAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../generated";
+import { buildUserOp, Call, createAccountCalldata, getAccountAddress, getUserOpHash } from "../index";
 import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../utils/replayable";
 import { buildWebAuthnSignature, p256WebAuthnSign } from "../utils/signature";
 import { authenticatorData, getAccount, p256PrivateKey, p256PubKey } from "./base";
 
 const chain = baseSepolia;
-const altChain = sepolia;
+const replayChain = optimismSepolia;
 
 export const client: BundlerClient = createPublicClient({
   chain,
@@ -30,12 +31,18 @@ export const client: BundlerClient = createPublicClient({
   ),
 }).extend(bundlerActions);
 
-export const altClient: BundlerClient = createPublicClient({
-  chain,
+export const replayChainClient: PublicClient = createPublicClient({
+  chain: replayChain,
   transport: http(
-    process.env.ALT_RPC_URL || "",
+    process.env.REPLAY_CHAIN_RPC_URL || "",
   ),
-}).extend(bundlerActions);
+});
+
+type ReservoirTx = {
+  data: Hex;
+  to: Address;
+  value: BigInt;
+};
 
 export async function main() {
   const account = await getAccount();
@@ -78,16 +85,59 @@ export async function main() {
 
   console.log("opHash", opHash);
 
-  const eoa = privateKeyToAccount(process.env.PRIVATE_KEY as Hex);
-  const x = await writeContract(altClient, {
-    address: entryPointAddress,
-    abi: entryPointAbi,
-    functionName: "handleOps",
-    args: [[op], op.sender],
-    account: eoa,
-    chain: altChain,
+  const block = await replayChainClient.getBlock();
+  const priorityFee = block.baseFeePerGas + op.maxPriorityFeePerGas;
+  const gasPrice = op.maxFeePerGas < priorityFee ? op.maxFeePerGas : priorityFee;
+  const cost = (op.callGasLimit + op.verificationGasLimit + op.preVerificationGas) * gasPrice;
+  const replayChainAccountBalance = await getBalance(replayChainClient, { address: op.sender });
+  const ethNeededOnReplayChain = cost - replayChainAccountBalance;
+
+  const senderChainAccountBalance = await getBalance(client, { address: op.sender });
+  const estimateReservoirOverhead = parseEther("0.0001");
+  const neededOnSenderChain = cost + estimateReservoirOverhead;
+
+  const code = await getBytecode(replayChainClient, { address: op.sender });
+  const needsDeploy = !code;
+  const senderChainCanFundReplayChain = senderChainAccountBalance > neededOnSenderChain + ethNeededOnReplayChain;
+
+  const transactions: ReservoirTx[] = [];
+
+  // NOTE: need a hard flag for chains that do not have ETH as native asset
+
+  if (needsDeploy) {
+    transactions.push({
+      to: accountFactoryAddress,
+      value: senderChainCanFundReplayChain ? ethNeededOnReplayChain : 0n,
+      // be sure to pass original owners / nonce to get the same account address
+      data: createAccountCalldata({ owners: [p256PubKey()], nonce: 0n }),
+    });
+  } else {
+    // NOTE should also check that this second call here doesn't break the logic of senderChainCanFundReplayChain
+    // build in padding to estimateReservoirOverhead
+    if (senderChainCanFundReplayChain) {
+      transactions.push({
+        to: op.sender,
+        value: ethNeededOnReplayChain,
+        data: "0x",
+      });
+    }
+  }
+
+  if (!senderChainCanFundReplayChain) {
+    // alert user needs to fund replay chain out of band
+  }
+
+  transactions.push({
+    to: entryPointAddress,
+    value: 0n,
+    data: encodeFunctionData({
+      abi: entryPointAbi,
+      functionName: "handleOps",
+      args: [[op], op.sender],
+    }),
   });
-  console.log("tx hash", x);
+
+  // send
 }
 
-main();
+// main();
