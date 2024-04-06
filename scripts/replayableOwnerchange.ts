@@ -118,7 +118,7 @@ export async function main() {
   } else {
     // NOTE should also check that this second call here doesn't break the logic of senderChainCanFundReplayChain
     // build in padding to estimateReservoirOverhead
-    if (senderChainCanFundReplayChain) {
+    if (senderChainCanFundReplayChain && ethNeededOnReplayChain > 0n) {
       transactions.push({
         to: op.sender,
         value: ethNeededOnReplayChain,
