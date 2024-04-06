@@ -90,7 +90,8 @@ export async function main() {
   const gasPrice = op.maxFeePerGas < priorityFee ? op.maxFeePerGas : priorityFee;
   const cost = (op.callGasLimit + op.verificationGasLimit + op.preVerificationGas) * gasPrice;
   const replayChainAccountBalance = await getBalance(replayChainClient, { address: op.sender });
-  const ethNeededOnReplayChain = cost - replayChainAccountBalance;
+  const diff = cost - replayChainAccountBalance;
+  const ethNeededOnReplayChain = diff > 0 ? diff : 0n;
 
   const senderChainAccountBalance = await getBalance(client, { address: op.sender });
   const estimateReservoirOverhead = parseEther("0.0001");
