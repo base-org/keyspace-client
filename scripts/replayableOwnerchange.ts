@@ -102,6 +102,11 @@ export async function main() {
     /// neededOnSenderChain += estimated cost of createAccount call on factory
     /// estimateReservoirOverhead += parseEther("0.0001")
   }
+  
+  if (senderChainAccountBalance < neededOnSenderChain) {
+    /// alert need to fund sender chain
+  }
+  
   const senderChainCanFundReplayChain = senderChainAccountBalance > neededOnSenderChain + ethNeededOnReplayChain;
 
   const transactions: ReservoirTx[] = [];
