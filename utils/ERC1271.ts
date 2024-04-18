@@ -12,7 +12,7 @@ import {
 } from "viem";
 import { signMessage } from "viem/accounts";
 import { getBytecode } from "viem/actions";
-import { createAccountCalldata } from "..";
+import { createAccountCalldata } from "./smartWallet";
 import { accountFactoryAddress, erc1271InputGeneratorAbi } from "../generated";
 import { authenticatorData, client } from "../scripts/base";
 import { buildWebAuthnSignature, p256WebAuthnSign } from "./signature";

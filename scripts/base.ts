@@ -3,7 +3,7 @@ import { Address, createPublicClient, encodeAbiParameters, Hex, http } from "vie
 import { baseSepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
 import { entryPointAddress } from "../generated";
-import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../index";
+import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
 import { buildWebAuthnSignature, p256WebAuthnSign } from "../utils/signature";
 
 const chain = baseSepolia;

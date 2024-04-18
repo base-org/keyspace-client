@@ -22,7 +22,7 @@ export async function buildReplayableUserOp(
     owners: signers,
     index: 0n,
   });
-  const callData = executeWithoutChainIdValidationCalldata({ data });
+  const callData = executeWithoutChainIdValidationCalldata({ calls: [data] });
   const nonce = await readContract(client, {
     address: entryPointAddress,
     abi: entryPointAbi,
@@ -55,11 +55,11 @@ export async function buildReplayableUserOp(
   };
 }
 
-export function executeWithoutChainIdValidationCalldata({ data }: { data: Hex }): Hex {
+export function executeWithoutChainIdValidationCalldata({ calls }: { calls: Hex[] }): Hex {
   return encodeFunctionData({
     abi: accountAbi,
     functionName: "executeWithoutChainIdValidation",
-    args: [data],
+    args: [calls],
   });
 }
 

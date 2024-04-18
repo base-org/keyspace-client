@@ -88,16 +88,16 @@ export function buildDummySignature({ ownerIndex, challenge }: { ownerIndex: big
 
 
 export function buildEOADummySignature({ ownerIndex }: { ownerIndex: bigint }) {
-  return eoaSignatureWrapper({signature: {r: '0x', s: '0x', v: 0n}, ownerIndex});
+  return buildSignatureWrapperForEOA({signature: {r: '0x0000000000000000000000000000000000000000000000000000000000000000', s: '0x0000000000000000000000000000000000000000000000000000000000000000', v: 0n}, ownerIndex});
 }
 
-export function eoaSignatureWrapper({signature, ownerIndex}: {signature: SignReturnType, ownerIndex: bigint}) {
+export function buildSignatureWrapperForEOA({signature, ownerIndex}: {signature: SignReturnType, ownerIndex: bigint}) {
   const signatureData = encodePacked(
-    ["bytes32", "bytes32", "uint"],
+    ["bytes32", "bytes32", "uint8"],
     [
       signature.r,
       signature.s,
-      signature.v,
+      parseInt(signature.v.toString()),
     ],
   );
   return encodeAbiParameters(

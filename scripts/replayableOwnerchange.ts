@@ -16,7 +16,7 @@ const ECDSA = require("ecdsa-secp256r1");
 import { privateKeyToAccount } from "viem/accounts";
 import { getBalance, getBytecode, writeContract } from "viem/actions";
 import { accountAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../generated";
-import { buildUserOp, Call, createAccountCalldata, getAccountAddress, getUserOpHash } from "../index";
+import { buildUserOp, Call, createAccountCalldata, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
 import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../utils/replayable";
 import { buildWebAuthnSignature, p256WebAuthnSign } from "../utils/signature";
 import { authenticatorData, getAccount, p256PrivateKey, p256PubKey } from "./base";

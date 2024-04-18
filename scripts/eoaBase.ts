@@ -2,8 +2,8 @@ import { bundlerActions, BundlerClient } from "permissionless";
 import { Address, createPublicClient, encodeAbiParameters, Hex, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../generated";
-import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../index";
-import { buildWebAuthnSignature, p256WebAuthnSign } from "../utils/signature";
+import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
+import { buildSignatureWrapperForEOA } from "../utils/signature";
 import { privateKeyToAccount, sign } from "viem/accounts";
 
 const chain = baseSepolia;
@@ -18,7 +18,7 @@ export const client: BundlerClient = createPublicClient({
 const eoa = privateKeyToAccount(process.env.PRIVATE_KEY as Hex || "");
 
 export async function getAccount(): Promise<Address> {
-  return await getAccountAddress(client as any, { owners: [eoa.address], nonce: 0n });
+  return await getAccountAddress(client as any, { owners: [encodeAbiParameters([{type: 'address'}], [eoa.address])], nonce: 0n });
 }
 
 export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
@@ -26,23 +26,19 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
 
   const op = await buildUserOp(client, {
     account,
-    signers: [eoa.address],
+    signers: [encodeAbiParameters([{type: 'address'}], [eoa.address])],
     calls,
     paymasterAndData: paymasterData,
+    passkeySigner: false,
   });
-
-  op.verificationGasLimit = 800000n;
 
   const hash = getUserOpHash({ userOperation: op, chainId: BigInt(chain.id) });
 
   const signature = await sign({hash, privateKey: process.env.PRIVATE_KEY as Hex});
 
-  const signatureWrapper = buildWebAuthnSignature({
+  const signatureWrapper = buildSignatureWrapperForEOA({
+    signature,
     ownerIndex: 0n,
-    authenticatorData,
-    clientDataJSON,
-    r,
-    s,
   });
   op.signature = signatureWrapper;
 
@@ -54,3 +50,4 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
   console.log("opHash", opHash);
 }
 
+makeCalls([])
