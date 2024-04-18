@@ -1,5 +1,5 @@
 import { encodeFunctionData, erc20Abi } from "viem";
-import { Call } from "..";
+import { Call } from "../utils/smartWallet";
 import { getAccount, makeCalls } from "./base";
 
 async function main() {

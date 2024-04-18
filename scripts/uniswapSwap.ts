@@ -1,6 +1,6 @@
 import { encodeFunctionData, erc20Abi } from "viem";
-import { Call } from "..";
 import { swapRouterAbi, swapRouterAddress } from "../generated";
+import { Call } from "../utils/smartWallet";
 import { getAccount, makeCalls } from "./base";
 
 async function main() {

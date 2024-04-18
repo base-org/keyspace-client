@@ -10,7 +10,7 @@ import {
   stringToBytes,
   stringToHex,
 } from "viem";
-import { SignReturnType, sign } from "viem/accounts";
+import { sign, SignReturnType } from "viem/accounts";
 
 const WebAuthnAuthStruct = {
   components: [
@@ -86,12 +86,20 @@ export function buildDummySignature({ ownerIndex, challenge }: { ownerIndex: big
   );
 }
 
-
 export function buildEOADummySignature({ ownerIndex }: { ownerIndex: bigint }) {
-  return buildSignatureWrapperForEOA({signature: {r: '0x0000000000000000000000000000000000000000000000000000000000000000', s: '0x0000000000000000000000000000000000000000000000000000000000000000', v: 0n}, ownerIndex});
+  return buildSignatureWrapperForEOA({
+    signature: {
+      r: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      s: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      v: 0n,
+    },
+    ownerIndex,
+  });
 }
 
-export function buildSignatureWrapperForEOA({signature, ownerIndex}: {signature: SignReturnType, ownerIndex: bigint}) {
+export function buildSignatureWrapperForEOA(
+  { signature, ownerIndex }: { signature: SignReturnType; ownerIndex: bigint },
+) {
   const signatureData = encodePacked(
     ["bytes32", "bytes32", "uint8"],
     [

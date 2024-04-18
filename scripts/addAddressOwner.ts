@@ -1,6 +1,6 @@
 import { encodeFunctionData } from "viem";
-import { Call } from "..";
 import { accountAbi } from "../generated";
+import { Call } from "../utils/smartWallet";
 import { getAccount, makeCalls } from "./base";
 
 async function main() {

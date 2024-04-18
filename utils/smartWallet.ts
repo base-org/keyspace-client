@@ -46,7 +46,7 @@ export async function buildUserOp(
     initCode,
     callData,
     paymasterAndData,
-    signature: passkeySigner ? PASSKEY_OWNER_DUMMY_SIGNATURE : buildEOADummySignature({ownerIndex: 0n}),
+    signature: passkeySigner ? PASSKEY_OWNER_DUMMY_SIGNATURE : buildEOADummySignature({ ownerIndex: 0n }),
     preVerificationGas: 1_000_000n,
     verificationGasLimit: 1_000_000n,
     callGasLimit: 1_000_000n,
