@@ -202,9 +202,9 @@
     "name": "executeWithoutChainIdValidation",
     "inputs": [
       {
-        "name": "data",
-        "type": "bytes",
-        "internalType": "bytes"
+        "name": "calls",
+        "type": "bytes[]",
+        "internalType": "bytes[]"
       }
     ],
     "outputs": [],
@@ -445,16 +445,52 @@
   },
   {
     "type": "function",
+    "name": "removeLastOwner",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "owner",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "removeOwnerAtIndex",
     "inputs": [
       {
         "name": "index",
         "type": "uint256",
         "internalType": "uint256"
+      },
+      {
+        "name": "owner",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "removedOwnersCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -681,10 +717,26 @@
   },
   {
     "type": "error",
+    "name": "LastOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "NoOwnerAtIndex",
     "inputs": [
       {
         "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotLastOwner",
+    "inputs": [
+      {
+        "name": "ownersRemaining",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -715,5 +767,26 @@
     "type": "error",
     "name": "UpgradeFailed",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "WrongOwnerAtIndex",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "expectedOwner",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "actualOwner",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
   }
 ]

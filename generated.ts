@@ -99,7 +99,7 @@ export const accountAbi = [
   },
   {
     type: "function",
-    inputs: [{ name: "data", internalType: "bytes", type: "bytes" }],
+    inputs: [{ name: "calls", internalType: "bytes[]", type: "bytes[]" }],
     name: "executeWithoutChainIdValidation",
     outputs: [],
     stateMutability: "payable",
@@ -213,10 +213,30 @@ export const accountAbi = [
   },
   {
     type: "function",
-    inputs: [{ name: "index", internalType: "uint256", type: "uint256" }],
+    inputs: [
+      { name: "index", internalType: "uint256", type: "uint256" },
+      { name: "owner", internalType: "bytes", type: "bytes" },
+    ],
+    name: "removeLastOwner",
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    inputs: [
+      { name: "index", internalType: "uint256", type: "uint256" },
+      { name: "owner", internalType: "bytes", type: "bytes" },
+    ],
     name: "removeOwnerAtIndex",
     outputs: [],
     stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    inputs: [],
+    name: "removedOwnersCount",
+    outputs: [{ name: "", internalType: "uint256", type: "uint256" }],
+    stateMutability: "view",
   },
   {
     type: "function",
@@ -339,10 +359,18 @@ export const accountAbi = [
     inputs: [{ name: "owner", internalType: "bytes", type: "bytes" }],
     name: "InvalidOwnerBytesLength",
   },
+  { type: "error", inputs: [], name: "LastOwner" },
   {
     type: "error",
     inputs: [{ name: "index", internalType: "uint256", type: "uint256" }],
     name: "NoOwnerAtIndex",
+  },
+  {
+    type: "error",
+    inputs: [
+      { name: "ownersRemaining", internalType: "uint256", type: "uint256" },
+    ],
+    name: "NotLastOwner",
   },
   {
     type: "error",
@@ -352,6 +380,15 @@ export const accountAbi = [
   { type: "error", inputs: [], name: "Unauthorized" },
   { type: "error", inputs: [], name: "UnauthorizedCallContext" },
   { type: "error", inputs: [], name: "UpgradeFailed" },
+  {
+    type: "error",
+    inputs: [
+      { name: "index", internalType: "uint256", type: "uint256" },
+      { name: "expectedOwner", internalType: "bytes", type: "bytes" },
+      { name: "actualOwner", internalType: "bytes", type: "bytes" },
+    ],
+    name: "WrongOwnerAtIndex",
+  },
 ] as const;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -407,7 +444,7 @@ export const accountFactoryAbi = [
   { type: "error", inputs: [], name: "OwnerRequired" },
 ] as const;
 
-export const accountFactoryAddress = "0xAb784cC3cc0339013BD064C214e71D96Beb435d9" as const;
+export const accountFactoryAddress = "0xFd053fbB6a6dC666C67b59dBAcf59307De2Df6ae" as const;
 
 export const accountFactoryConfig = {
   address: accountFactoryAddress,

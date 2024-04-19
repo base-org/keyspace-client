@@ -12,10 +12,10 @@ import {
 } from "viem";
 import { signMessage } from "viem/accounts";
 import { getBytecode } from "viem/actions";
-import { createAccountCalldata } from "..";
 import { accountFactoryAddress, erc1271InputGeneratorAbi } from "../generated";
 import { authenticatorData, client } from "../scripts/base";
 import { buildWebAuthnSignature, p256WebAuthnSign } from "./signature";
+import { createAccountCalldata } from "./smartWallet";
 
 // ERC-6492 magic bytes
 export const magicBytes = "0x6492649264926492649264926492649264926492649264926492649264926492";

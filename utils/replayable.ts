@@ -2,6 +2,7 @@ import { BundlerClient, estimateUserOperationGas, UserOperation } from "permissi
 import { Address, encodeAbiParameters, encodeFunctionData, Hex, keccak256 } from "viem";
 import { estimateFeesPerGas, getBytecode, readContract } from "viem/actions";
 import { accountAbi, entryPointAbi, entryPointAddress } from "../generated";
+import { buildEOADummySignature } from "./signature";
 import { getInitCode, PASSKEY_OWNER_DUMMY_SIGNATURE } from "./smartWallet";
 
 export async function buildReplayableUserOp(
@@ -9,20 +10,25 @@ export async function buildReplayableUserOp(
   {
     account,
     signers,
-    data,
+    calls,
+    passkeySigner = true,
   }: {
     account: Address;
     signers: Hex[];
-    data: Hex;
+    calls: Hex[];
+    passkeySigner?: boolean;
   },
 ): Promise<UserOperation> {
+  let initCode: Hex = "0x";
   const code = await getBytecode(client, { address: account });
+  if (!code) {
+    initCode = getInitCode({
+      owners: signers,
+      index: 0n,
+    });
+  }
 
-  const initCode = getInitCode({
-    owners: signers,
-    index: 0n,
-  });
-  const callData = executeWithoutChainIdValidationCalldata({ data });
+  const callData = executeWithoutChainIdValidationCalldata({ calls });
   const nonce = await readContract(client, {
     address: entryPointAddress,
     abi: entryPointAbi,
@@ -37,7 +43,7 @@ export async function buildReplayableUserOp(
     initCode,
     callData,
     paymasterAndData: "0x" as Hex,
-    signature: PASSKEY_OWNER_DUMMY_SIGNATURE,
+    signature: passkeySigner ? PASSKEY_OWNER_DUMMY_SIGNATURE : buildEOADummySignature({ ownerIndex: 0n }),
     preVerificationGas: 1_000_000n,
     verificationGasLimit: 1_000_000n,
     callGasLimit: 1_000_000n,
@@ -55,11 +61,11 @@ export async function buildReplayableUserOp(
   };
 }
 
-export function executeWithoutChainIdValidationCalldata({ data }: { data: Hex }): Hex {
+export function executeWithoutChainIdValidationCalldata({ calls }: { calls: Hex[] }): Hex {
   return encodeFunctionData({
     abi: accountAbi,
     functionName: "executeWithoutChainIdValidation",
-    args: [data],
+    args: [calls],
   });
 }
 

@@ -16,9 +16,9 @@ const ECDSA = require("ecdsa-secp256r1");
 import { privateKeyToAccount } from "viem/accounts";
 import { getBalance, getBytecode, writeContract } from "viem/actions";
 import { accountAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../generated";
-import { buildUserOp, Call, createAccountCalldata, getAccountAddress, getUserOpHash } from "../index";
 import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../utils/replayable";
 import { buildWebAuthnSignature, p256WebAuthnSign } from "../utils/signature";
+import { buildUserOp, Call, createAccountCalldata, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
 import { authenticatorData, getAccount, p256PrivateKey, p256PubKey } from "./base";
 
 const chain = baseSepolia;
@@ -56,7 +56,7 @@ export async function main() {
   const op = await buildReplayableUserOp(client, {
     account,
     signers: [p256PubKey()],
-    data,
+    calls: [data],
   });
 
   op.verificationGasLimit = 800000n;
@@ -102,11 +102,11 @@ export async function main() {
     /// neededOnSenderChain += estimated cost of createAccount call on factory
     /// estimateReservoirOverhead += parseEther("0.0001")
   }
-  
+
   if (senderChainAccountBalance < neededOnSenderChain) {
     /// alert need to fund sender chain
   }
-  
+
   const senderChainCanFundReplayChain = senderChainAccountBalance > neededOnSenderChain + ethNeededOnReplayChain;
 
   const transactions: ReservoirTx[] = [];

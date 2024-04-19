@@ -1,4 +1,4 @@
-import { Call } from "..";
+import { Call } from "../utils/smartWallet";
 import { makeCalls } from "./base";
 
 function main() {
