@@ -139,7 +139,7 @@ export const accountAbi = [
       },
     ],
     name: "getUserOpHashWithoutChainId",
-    outputs: [{ name: "userOpHash", internalType: "bytes32", type: "bytes32" }],
+    outputs: [{ name: "", internalType: "bytes32", type: "bytes32" }],
     stateMutability: "view",
   },
   {
@@ -202,6 +202,13 @@ export const accountAbi = [
     inputs: [{ name: "index", internalType: "uint256", type: "uint256" }],
     name: "ownerAtIndex",
     outputs: [{ name: "", internalType: "bytes", type: "bytes" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    inputs: [],
+    name: "ownerCount",
+    outputs: [{ name: "", internalType: "uint256", type: "uint256" }],
     stateMutability: "view",
   },
   {
@@ -295,7 +302,7 @@ export const accountAbi = [
     outputs: [
       { name: "validationData", internalType: "uint256", type: "uint256" },
     ],
-    stateMutability: "payable",
+    stateMutability: "nonpayable",
   },
   {
     type: "event",
@@ -398,7 +405,9 @@ export const accountAbi = [
 export const accountFactoryAbi = [
   {
     type: "constructor",
-    inputs: [{ name: "erc4337", internalType: "address", type: "address" }],
+    inputs: [
+      { name: "implementation_", internalType: "address", type: "address" },
+    ],
     stateMutability: "payable",
   },
   {
@@ -424,7 +433,7 @@ export const accountFactoryAbi = [
       { name: "nonce", internalType: "uint256", type: "uint256" },
     ],
     name: "getAddress",
-    outputs: [{ name: "predicted", internalType: "address", type: "address" }],
+    outputs: [{ name: "", internalType: "address", type: "address" }],
     stateMutability: "view",
   },
   {
@@ -438,13 +447,13 @@ export const accountFactoryAbi = [
     type: "function",
     inputs: [],
     name: "initCodeHash",
-    outputs: [{ name: "result", internalType: "bytes32", type: "bytes32" }],
+    outputs: [{ name: "", internalType: "bytes32", type: "bytes32" }],
     stateMutability: "view",
   },
   { type: "error", inputs: [], name: "OwnerRequired" },
 ] as const;
 
-export const accountFactoryAddress = "0xFd053fbB6a6dC666C67b59dBAcf59307De2Df6ae" as const;
+export const accountFactoryAddress = "0x0BA5ED0c6AA8c49038F819E587E2633c4A9F428a" as const;
 
 export const accountFactoryConfig = {
   address: accountFactoryAddress,
