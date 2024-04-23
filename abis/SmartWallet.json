@@ -279,7 +279,7 @@
     ],
     "outputs": [
       {
-        "name": "userOpHash",
+        "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
       }
@@ -426,6 +426,19 @@
         "name": "",
         "type": "bytes",
         "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ownerCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -613,7 +626,7 @@
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "payable"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "event",
