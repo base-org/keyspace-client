@@ -35,8 +35,13 @@ export const mockWebAuthnERC1271CompatibleEIP191Sign = async (
   },
 ) => {
   const hash = hashMessage(message);
-  const factoryCalldata = owners && factory ? createAccountCalldata({ owners, nonce: 0n }) : "0x";
-  const toSign = await replaySafeHash(client, { hash, account, factoryCalldata });
+  const factoryCalldata = owners ? createAccountCalldata({ owners, nonce: 0n }) : "0x";
+  const toSign = await replaySafeHash(client, {
+    hash,
+    account,
+    factory: factory || accountFactoryAddress,
+    factoryCalldata,
+  });
 
   const { r, s, clientDataJSON } = p256WebAuthnSign({
     challenge: toSign,
@@ -59,7 +64,7 @@ export const mockWebAuthnERC1271CompatibleEIP191Sign = async (
         parseAbiParameters(
           "address accountFactory, bytes createAccountCalldata, bytes originalSignature",
         ),
-        [accountFactoryAddress, factoryCalldata, signature],
+        [factory || accountFactoryAddress, factoryCalldata, signature],
       ),
       magicBytes,
     ]);
@@ -82,7 +87,7 @@ export const replaySafeHash = async (
   const data = encodeDeployData({
     bytecode: ERC1271InputGeneratorByteCode,
     abi: erc1271InputGeneratorAbi,
-    args: [account, hash, accountFactoryAddress, factoryCalldata || "0x"],
+    args: [account, hash, factory || accountFactoryAddress, factoryCalldata || "0x"],
   });
 
   const { data: safeHash } = await client.call({ data });
