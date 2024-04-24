@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createPublicClient, hashMessage, http, PublicClient } from "viem";
 import { baseSepolia } from "viem/chains";
-import { createAccountCalldata } from "..";
+import { createAccountCalldata } from "../utils/smartWallet";
 import { mockWebAuthnERC1271CompatibleEIP191Sign, replaySafeHash } from "./ERC1271";
 const ECDSA = require("ecdsa-secp256r1");
 

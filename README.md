@@ -31,3 +31,8 @@ If you are running `MagicSpend` scripts, you will also need a `PRIVATE_KEY` valu
 ```bash
 bun run scripts/createAccount.ts
 ```
+
+**Running tests**
+```bash
+bun test --watch
+```
