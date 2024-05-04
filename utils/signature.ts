@@ -12,7 +12,7 @@ import {
 } from "viem";
 import { sign, SignReturnType } from "viem/accounts";
 
-const WebAuthnAuthStruct = {
+export const WebAuthnAuthStruct = {
   components: [
     {
       name: "authenticatorData",
