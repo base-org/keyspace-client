@@ -8,7 +8,7 @@ import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../utils/rep
 import { buildSignatureWrapperForEOA } from "../utils/signature";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
 import { keyspaceActions } from "../keyspace-viem/decorators/keyspace";
-import { poseidon } from "@noble/curves/abstract/poseidon";
+import { poseidonPerm } from "@zk-kit/poseidon-cipher";
 
 const chain = baseSepolia;
 
@@ -28,9 +28,6 @@ export const keyspaceClient = createPublicClient({
 
 export const eoa = privateKeyToAccount(process.env.PRIVATE_KEY as Hex || "");
 export const abiEncodedEOA = encodeAbiParameters([{ type: "address" }], [eoa.address]);
-
-// Keyspace key for the EcsdaAccount circuit using the ECDSA key with Ethereum address 0x7C55AC8898a8D9B73d366204A3CF44381b661923
-export const keyspaceKey = "0x1563cace6b39ac44a995db247723ea7f9af0b03189710082fca90187bb4e33e1";
 export const vkHashEcdsaAccount = "0x5F3AD85187D374A196B7F0091FDAE25710EC375C24D229618DBECA9FE16994";
 
 /**
@@ -59,11 +56,23 @@ export function getDataHash(privateKey: Hex): Hex {
   return toHex(truncatedHash);
 }
 
+/**
+ * Generate the poseidon hash of the inputs provided
+ * @param inputs The inputs to hash
+ * @returns the hash of the inputs
+ * From https://github.com/privacy-scaling-explorations/maci/blob/2fe5c57/crypto/ts/hashing.ts
+ */
+export const poseidon = (inputs: bigint[]): bigint => poseidonPerm([BigInt(0), ...inputs.map((x) => BigInt(x))])[0];
+
 export function getKeyspaceKey(dataHash: Hex): Hex {
-  // TODO: We need to configure a Poseidon hasher identically to the BN254
-  // hasher in mdehoog/poseidon.
-  // https://github.com/mdehoog/poseidon/blob/main/constants/bn254.go
-  return keyspaceKey;
+  // The poseidon hash function provided by viem's preferred @noble/curves
+  // crypto library must be configured manually, and their example usage is not
+  // clear.
+  // https://github.com/paulmillr/scure-starknet/blob/3905471/index.ts#L329-L336
+  // The configured hasher from @zk-kit/poseidon-cipher seems to match the
+  // configuration for BN254 in mdehoog/poseidon.
+  const hash = poseidon([fromHex(vkHashEcdsaAccount, "bigint"), fromHex(dataHash, "bigint")]);
+  return toHex(hash);
 }
 
 export async function getAccount(): Promise<Address> {
@@ -73,6 +82,7 @@ export async function getAccount(): Promise<Address> {
 export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
   const account = await getAccount();
   const dataHash = getDataHash(process.env.PRIVATE_KEY as Hex);
+  const keyspaceKey = getKeyspaceKey(dataHash);
   const keyspaceProof = await keyspaceClient.getKeyspaceProof({
     key: keyspaceKey,
     vkHash: vkHashEcdsaAccount,
