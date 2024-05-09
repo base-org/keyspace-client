@@ -2,13 +2,13 @@ import { bundlerActions, BundlerClient } from "permissionless";
 import { Address, createPublicClient, encodeAbiParameters, fromHex, Hex, http, keccak256, toHex } from "viem";
 import { privateKeyToAccount, sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import { secp256k1 } from '@noble/curves/secp256k1'
 import { entryPointAddress } from "../generated";
 import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../utils/replayable";
 import { buildSignatureWrapperForEOA } from "../utils/signature";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
 import { keyspaceActions } from "../keyspace-viem/decorators/keyspace";
-import { poseidonPerm } from "@zk-kit/poseidon-cipher";
+import { GetProofReturnType } from "../keyspace-viem/actions/getKeyspaceProof";
+import { getKeyspaceKey, serializePublicKeyFromPrivateKey } from "../utils/keyspace";
 
 const chain = baseSepolia;
 
@@ -28,69 +28,41 @@ export const keyspaceClient = createPublicClient({
 
 export const eoa = privateKeyToAccount(process.env.PRIVATE_KEY as Hex || "");
 export const abiEncodedEOA = encodeAbiParameters([{ type: "address" }], [eoa.address]);
+// This verification key is not production-ready because it uses a locally
+// generated KZG commitment instead of one with a trusted setup.
 export const vkHashEcdsaAccount = "0x5F3AD85187D374A196B7F0091FDAE25710EC375C24D229618DBECA9FE16994";
 
-/**
- * Pack an ECDSA public key into the 256 byte Keyspace data record expected by the EcsdaAccount circuit.
- */
-export function serializePublicKey(privateKey: Hex): Uint8Array {
-  const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
-  const encodingByte = publicKey.slice(0, 1);
-  if (encodingByte[0] !== 4) {
-    throw new Error("Invalid public key encoding");
-  }
-
-  const publicKeyX = publicKey.slice(1, 33);
-  const publicKeyY = publicKey.slice(33, 65);
-
-  const keyspaceData = new Uint8Array(256);
-  keyspaceData.set(publicKeyX, 0);
-  keyspaceData.set(publicKeyY, 32);
-  return keyspaceData;
-}
-
 export function getDataHash(privateKey: Hex): Hex {
-  const publicKey = serializePublicKey(privateKey);
+  const publicKey = serializePublicKeyFromPrivateKey(privateKey);
   const fullHash = keccak256(publicKey);
   const truncatedHash = fromHex(fullHash, "bytes").slice(0, 31);
   return toHex(truncatedHash);
 }
 
-/**
- * Generate the poseidon hash of the inputs provided
- * @param inputs The inputs to hash
- * @returns the hash of the inputs
- * From https://github.com/privacy-scaling-explorations/maci/blob/2fe5c57/crypto/ts/hashing.ts
- */
-export const poseidon = (inputs: bigint[]): bigint => poseidonPerm([BigInt(0), ...inputs.map((x) => BigInt(x))])[0];
-
-export function getKeyspaceKey(dataHash: Hex): Hex {
-  // The poseidon hash function provided by viem's preferred @noble/curves
-  // crypto library must be configured manually, and their example usage is not
-  // clear.
-  // https://github.com/paulmillr/scure-starknet/blob/3905471/index.ts#L329-L336
-  // The configured hasher from @zk-kit/poseidon-cipher seems to match the
-  // configuration for BN254 in mdehoog/poseidon.
-  const hash = poseidon([fromHex(vkHashEcdsaAccount, "bigint"), fromHex(dataHash, "bigint")]);
-  return toHex(hash);
-}
-
 export async function getAccount(): Promise<Address> {
+  // TODO: Update owners to refer to a keyspace key.
   return await getAccountAddress(client as any, { owners: [abiEncodedEOA], nonce: 0n });
 }
 
-export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
-  const account = await getAccount();
+export async function getKeyspaceStateProof(): Promise<GetProofReturnType> {
   const dataHash = getDataHash(process.env.PRIVATE_KEY as Hex);
-  const keyspaceKey = getKeyspaceKey(dataHash);
+  const keyspaceKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
   const keyspaceProof = await keyspaceClient.getKeyspaceProof({
     key: keyspaceKey,
     vkHash: vkHashEcdsaAccount,
     dataHash,
   });
-
   console.log(keyspaceProof);
+  return keyspaceProof;
+}
 
+export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
+  const keyspaceProof = await getKeyspaceStateProof();
+  // TODO: Include the keyspace proof in the user operation once the contracts
+  // support it.
+
+  const account = await getAccount();
+  // TODO: Update signers to refer to a keyspace key.
   const op = await buildUserOp(client, {
     account,
     signers: [abiEncodedEOA],
