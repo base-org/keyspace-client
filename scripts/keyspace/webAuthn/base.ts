@@ -2,12 +2,12 @@ import { bundlerActions, BundlerClient } from "permissionless";
 import { Address, createPublicClient, encodeAbiParameters, Hex, http, keccak256, fromHex, toHex } from "viem";
 import { baseSepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
-import { entryPointAddress } from "../generated";
-import { buildWebAuthnSignature, p256WebAuthnSign } from "../utils/signature";
-import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
-import { keyspaceActions } from "../keyspace-viem/decorators/keyspace";
-import { serializePublicKeyFromPoint, getKeyspaceKey } from "../utils/keyspace";
-import { GetProofReturnType } from "../keyspace-viem/actions/getKeyspaceProof";
+import { entryPointAddress } from "../../../generated";
+import { buildWebAuthnSignature, p256WebAuthnSign } from "../../../utils/signature";
+import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
+import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
+import { serializePublicKeyFromPoint, getKeyspaceKey } from "../../../utils/keyspace";
+import { GetProofReturnType } from "../../../keyspace-viem/actions/getKeyspaceProof";
 
 const chain = baseSepolia;
 

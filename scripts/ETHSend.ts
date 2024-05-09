@@ -1,7 +1,7 @@
 import { Call } from "../utils/smartWallet";
 import * as webAuthnBase from "./base";
-import * as keyspaceEOABase from "./keyspaceEOABase";
-import * as keyspaceWebAuthnBase from "./keyspaceWebAuthnBase";
+import * as keyspaceEOABase from "./keyspace/EOA/base";
+import * as keyspaceWebAuthnBase from "./keyspace/webAuthn/base";
 
 async function main() {
   let baseModule: any = webAuthnBase;
