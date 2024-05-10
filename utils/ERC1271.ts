@@ -14,7 +14,7 @@ import { signMessage } from "viem/accounts";
 import { getBytecode } from "viem/actions";
 import { accountFactoryAddress, erc1271InputGeneratorAbi } from "../generated";
 import { authenticatorData, client } from "../scripts/base";
-import { buildWebAuthnSignature, p256WebAuthnSign } from "./signature";
+import { buildSignatureWrapperForWebAuthn, p256WebAuthnSign } from "./signature";
 import { createAccountCalldata } from "./smartWallet";
 
 // ERC-6492 magic bytes
@@ -49,7 +49,7 @@ export const mockWebAuthnERC1271CompatibleEIP191Sign = async (
     p256PrivateKey,
   });
 
-  var signature = buildWebAuthnSignature({
+  var signature = buildSignatureWrapperForWebAuthn({
     ownerIndex: 0n,
     authenticatorData,
     clientDataJSON,

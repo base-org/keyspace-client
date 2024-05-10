@@ -97,17 +97,7 @@ export function buildEOADummySignature({ ownerIndex }: { ownerIndex: bigint }) {
   });
 }
 
-export function buildSignatureWrapperForEOA(
-  { signature, ownerIndex }: { signature: SignReturnType; ownerIndex: bigint },
-) {
-  const signatureData = encodePacked(
-    ["bytes32", "bytes32", "uint8"],
-    [
-      signature.r,
-      signature.s,
-      parseInt(signature.v.toString()),
-    ],
-  );
+export function buildSignatureWrapper({ signatureData, ownerIndex }: { signatureData: Hex; ownerIndex: bigint }): Hex {
   return encodeAbiParameters(
     [SignatureWrapperStruct],
     [
@@ -117,6 +107,24 @@ export function buildSignatureWrapperForEOA(
       },
     ],
   );
+}
+
+export function encodeSignatureDataSecp256k1(signature: SignReturnType) {
+  return encodePacked(
+    ["bytes32", "bytes32", "uint8"],
+    [
+      signature.r,
+      signature.s,
+      parseInt(signature.v.toString()),
+    ],
+  );
+}
+
+export function buildSignatureWrapperForEOA(
+  { signature, ownerIndex }: { signature: SignReturnType; ownerIndex: bigint },
+) {
+  const signatureData = encodeSignatureDataSecp256k1(signature);
+  return buildSignatureWrapper({ signatureData, ownerIndex });
 }
 
 export async function signAndWrapEOA(
@@ -129,17 +137,13 @@ export async function signAndWrapEOA(
   });
 }
 
-export function buildWebAuthnSignature({
-  ownerIndex,
-  authenticatorData,
-  clientDataJSON,
-  r,
-  s,
-}: BuildUserOperationParams): Hex {
+export function encodeSignatureDataWebAuthn(
+  { authenticatorData, clientDataJSON, r, s }: { authenticatorData: string; clientDataJSON: string; r: bigint; s: bigint }
+) {
   const challengeIndex = clientDataJSON.indexOf("\"challenge\":");
   const typeIndex = clientDataJSON.indexOf("\"type\":");
 
-  const webAuthnAuthBytes = encodeAbiParameters(
+  return encodeAbiParameters(
     [WebAuthnAuthStruct],
     [
       {
@@ -152,13 +156,28 @@ export function buildWebAuthnSignature({
       },
     ],
   );
+}
+
+export function buildSignatureWrapperForWebAuthn({
+  ownerIndex,
+  authenticatorData,
+  clientDataJSON,
+  r,
+  s,
+}: BuildUserOperationParams): Hex {
+  const signatureData = encodeSignatureDataWebAuthn({
+    authenticatorData,
+    clientDataJSON,
+    r,
+    s,
+  });
 
   return encodeAbiParameters(
     [SignatureWrapperStruct],
     [
       {
         ownerIndex,
-        signatureData: webAuthnAuthBytes,
+        signatureData,
       },
     ],
   );
@@ -196,7 +215,7 @@ export async function signAndWrapWebAuthn(
     p256PrivateKey: privateKey,
   });
 
-  return buildWebAuthnSignature({
+  return buildSignatureWrapperForWebAuthn({
     ownerIndex,
     authenticatorData,
     clientDataJSON,

@@ -17,7 +17,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { getBalance, getBytecode, writeContract } from "viem/actions";
 import { accountAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../generated";
 import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../utils/replayable";
-import { buildWebAuthnSignature, p256WebAuthnSign } from "../utils/signature";
+import { buildSignatureWrapperForWebAuthn, p256WebAuthnSign } from "../utils/signature";
 import { buildUserOp, Call, createAccountCalldata, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
 import { authenticatorData, getAccount, p256PrivateKey, p256PubKey } from "./base";
 
@@ -69,7 +69,7 @@ export async function main() {
     p256PrivateKey,
   });
 
-  const signatureWrapper = buildWebAuthnSignature({
+  const signatureWrapper = buildSignatureWrapperForWebAuthn({
     ownerIndex: 0n,
     authenticatorData,
     clientDataJSON,
