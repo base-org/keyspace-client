@@ -1,5 +1,5 @@
 import { Hex, encodePacked, fromHex, toHex } from "viem";
-import { getDataHash, vkHashEcdsaAccount, keyspaceClient } from "./EOA/base";
+import { getDataHash, vkHashEcdsaAccount, keyspaceClient } from "./secp256k1/base";
 import { getKeyspaceKey } from "../../utils/keyspace";
 import { sign } from "viem/accounts";
 import { vkHashWebAuthnAccount } from "../keyspaceWebAuthnBase";

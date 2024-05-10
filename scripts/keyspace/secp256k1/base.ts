@@ -3,8 +3,7 @@ import { Address, createPublicClient, encodeAbiParameters, fromHex, Hex, http, k
 import { privateKeyToAccount, sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../../../generated";
-import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../../../utils/replayable";
-import { buildSignatureWrapperForEOA, signAndWrapEOA } from "../../../utils/signature";
+import { signAndWrapEOA } from "../../../utils/signature";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
 import { GetConfigProofReturnType } from "../../../keyspace-viem/actions/types";

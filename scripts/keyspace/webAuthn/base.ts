@@ -3,7 +3,7 @@ import { Address, createPublicClient, encodeAbiParameters, Hex, http, keccak256,
 import { baseSepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
 import { entryPointAddress } from "../../../generated";
-import { buildWebAuthnSignature, p256WebAuthnSign, signAndWrapWebAuthn, type ECDSA } from "../../../utils/signature";
+import { signAndWrapWebAuthn, type ECDSA } from "../../../utils/signature";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
 import { serializePublicKeyFromPoint, getKeyspaceKey } from "../../../utils/keyspace";
