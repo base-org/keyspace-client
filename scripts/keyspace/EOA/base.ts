@@ -4,10 +4,10 @@ import { privateKeyToAccount, sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../../../generated";
 import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../../../utils/replayable";
-import { buildSignatureWrapperForEOA } from "../../../utils/signature";
+import { buildSignatureWrapperForEOA, signAndWrapEOA } from "../../../utils/signature";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
-import { GetProofReturnType } from "../../../keyspace-viem/actions/getKeyspaceProof";
+import { GetConfigProofReturnType } from "../../../keyspace-viem/actions/types";
 import { getKeyspaceKey, serializePublicKeyFromPrivateKey } from "../../../utils/keyspace";
 
 const chain = baseSepolia;
@@ -44,10 +44,10 @@ export async function getAccount(): Promise<Address> {
   return await getAccountAddress(client as any, { owners: [abiEncodedEOA], nonce: 0n });
 }
 
-export async function getKeyspaceStateProof(): Promise<GetProofReturnType> {
+export async function getKeyspaceConfigProof(): Promise<GetConfigProofReturnType> {
   const dataHash = getDataHash(process.env.PRIVATE_KEY as Hex);
   const keyspaceKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
-  const keyspaceProof = await keyspaceClient.getKeyspaceProof({
+  const keyspaceProof = await keyspaceClient.getConfigProof({
     key: keyspaceKey,
     vkHash: vkHashEcdsaAccount,
     dataHash,
@@ -57,7 +57,7 @@ export async function getKeyspaceStateProof(): Promise<GetProofReturnType> {
 }
 
 export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
-  const keyspaceProof = await getKeyspaceStateProof();
+  const keyspaceProof = await getKeyspaceConfigProof();
   // TODO: Include the keyspace proof in the user operation once the contracts
   // support it.
 
@@ -72,42 +72,7 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
   });
 
   const hash = getUserOpHash({ userOperation: op, chainId: BigInt(chain.id) });
-
-  const signature = await sign({ hash, privateKey: process.env.PRIVATE_KEY as Hex });
-
-  const signatureWrapper = buildSignatureWrapperForEOA({
-    signature,
-    ownerIndex: 0n,
-  });
-  op.signature = signatureWrapper;
-
-  const opHash = await client.sendUserOperation({
-    userOperation: op,
-    entryPoint: entryPointAddress,
-  });
-
-  console.log("opHash", opHash);
-}
-
-export async function makeReplayableCalls(calls: Hex[], paymasterData = "0x" as Hex) {
-  const account = await getAccount();
-
-  const op = await buildReplayableUserOp(client, {
-    account,
-    signers: [encodeAbiParameters([{ type: "address" }], [eoa.address])],
-    calls,
-    passkeySigner: false,
-  });
-
-  const hash = getUserOpHashWithoutChainId({ userOperation: op });
-
-  const signature = await sign({ hash, privateKey: process.env.PRIVATE_KEY as Hex });
-
-  const signatureWrapper = buildSignatureWrapperForEOA({
-    signature,
-    ownerIndex: 0n,
-  });
-  op.signature = signatureWrapper;
+  op.signature = await signAndWrapEOA({ hash, privateKey: process.env.PRIVATE_KEY as Hex, ownerIndex: 0n });
 
   const opHash = await client.sendUserOperation({
     userOperation: op,

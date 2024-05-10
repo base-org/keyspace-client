@@ -119,6 +119,16 @@ export function buildSignatureWrapperForEOA(
   );
 }
 
+export async function signAndWrapEOA(
+  { hash, privateKey, ownerIndex }: { hash: Hex; privateKey: Hex; ownerIndex: bigint }
+): Promise<Hex> {
+  const signature = await sign({ hash, privateKey });
+  return buildSignatureWrapperForEOA({
+    signature,
+    ownerIndex,
+  });
+}
+
 export function buildWebAuthnSignature({
   ownerIndex,
   authenticatorData,
@@ -169,4 +179,28 @@ export function p256WebAuthnSign(
     s = n - s;
   }
   return { r, s, clientDataJSON };
+}
+
+export type ECDSA = {
+  x: Buffer,
+  y: Buffer,
+  sign: (message: string, format: string) => Buffer,
+};
+
+export async function signAndWrapWebAuthn(
+  { hash, privateKey, ownerIndex, authenticatorData }: { hash: Hex; privateKey: ECDSA; ownerIndex: bigint; authenticatorData: Hex }
+): Promise<Hex> {
+  const { r, s, clientDataJSON } = p256WebAuthnSign({
+    challenge: hash,
+    authenticatorData,
+    p256PrivateKey: privateKey,
+  });
+
+  return buildWebAuthnSignature({
+    ownerIndex,
+    authenticatorData,
+    clientDataJSON,
+    r,
+    s,
+  });
 }

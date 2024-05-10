@@ -3,19 +3,13 @@ import { Address, createPublicClient, encodeAbiParameters, Hex, http, keccak256,
 import { baseSepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
 import { entryPointAddress } from "../../../generated";
-import { buildWebAuthnSignature, p256WebAuthnSign } from "../../../utils/signature";
+import { buildWebAuthnSignature, p256WebAuthnSign, signAndWrapWebAuthn, type ECDSA } from "../../../utils/signature";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
 import { serializePublicKeyFromPoint, getKeyspaceKey } from "../../../utils/keyspace";
-import { GetProofReturnType } from "../../../keyspace-viem/actions/getKeyspaceProof";
+import { GetConfigProofReturnType } from "../../../keyspace-viem/actions/types";
 
 const chain = baseSepolia;
-
-type ECDSA = {
-  x: Buffer,
-  y: Buffer,
-  sign: (message: string, format: string) => Buffer,
-};
 
 export const client: BundlerClient = createPublicClient({
   chain,
@@ -49,10 +43,10 @@ export function getDataHash(privateKey: ECDSA): Hex {
   return toHex(truncatedHash);
 }
 
-export async function getKeyspaceStateProof(): Promise<GetProofReturnType> {
+export async function getKeyspaceConfigProof(): Promise<GetConfigProofReturnType> {
   const dataHash = getDataHash(p256PrivateKey);
   const keyspaceKey = getKeyspaceKey(vkHashWebAuthnAccount, dataHash);
-  const keyspaceProof = await keyspaceClient.getKeyspaceProof({
+  const keyspaceProof = await keyspaceClient.getConfigProof({
     key: keyspaceKey,
     vkHash: vkHashWebAuthnAccount,
     dataHash,
@@ -62,7 +56,7 @@ export async function getKeyspaceStateProof(): Promise<GetProofReturnType> {
 }
 
 export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
-  const keyspaceProof = await getKeyspaceStateProof();
+  const keyspaceProof = await getKeyspaceConfigProof();
   // TODO: Include the keyspace proof in the user operation once the contracts
   // support it.
 
@@ -77,21 +71,7 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
   op.verificationGasLimit = 800000n;
 
   const hash = getUserOpHash({ userOperation: op, chainId: BigInt(chain.id) });
-
-  const { r, s, clientDataJSON } = p256WebAuthnSign({
-    challenge: hash,
-    authenticatorData,
-    p256PrivateKey,
-  });
-
-  const signatureWrapper = buildWebAuthnSignature({
-    ownerIndex: 0n,
-    authenticatorData,
-    clientDataJSON,
-    r,
-    s,
-  });
-  op.signature = signatureWrapper;
+  op.signature = await signAndWrapWebAuthn({ hash, privateKey: p256PrivateKey, ownerIndex: 0n, authenticatorData });
 
   const opHash = await client.sendUserOperation({
     userOperation: op,

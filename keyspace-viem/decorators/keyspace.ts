@@ -1,8 +1,13 @@
 import { Account, Chain, Client, Transport } from "viem";
-import { GetProofParameters, GetProofReturnType, getKeyspaceProof } from "../actions/getKeyspaceProof";
+import { GetConfigProofParameters, GetConfigProofReturnType, GetRecoverProofParameters, GetRecoverProofReturnType, SetConfigParameters } from "../actions/types";
+import { getConfigProof } from "../actions/getConfigProof";
+import { getRecoverProof } from "../actions/getRecoverProof";
+import { setConfig } from "../actions/setConfig";
 
 export type KeyspaceActions = {
-  getKeyspaceProof: (parameters: GetProofParameters) => Promise<GetProofReturnType>;
+  getConfigProof: (parameters: GetConfigProofParameters) => Promise<GetConfigProofReturnType>;
+  getRecoverProof: (parameters: GetRecoverProofParameters) => Promise<GetRecoverProofReturnType>;
+  setConfig: (parameters: SetConfigParameters) => Promise<null>;
 }
 
 export function keyspaceActions() {
@@ -14,7 +19,9 @@ export function keyspaceActions() {
     client: Client<transport, chain, account>,
   ): KeyspaceActions => {
     return {
-      getKeyspaceProof: (parameters) => getKeyspaceProof(client, parameters),
+      getConfigProof: (parameters) => getConfigProof(client, parameters),
+      getRecoverProof: (parameters) => getRecoverProof(client, parameters),
+      setConfig: (parameters) => setConfig(client, parameters),
     };
   }
 }
