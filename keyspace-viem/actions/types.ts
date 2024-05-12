@@ -8,7 +8,7 @@ export type GetConfigProofParameters = {
 
 export type GetRecoverProofParameters = {
   key: Hex;
-  newKey254: Hex;
+  newKey: Hex;
   circuitType: "secp256k1" | "webauthn";
   signature: Hex;
 };
@@ -38,7 +38,7 @@ export type MKSRRpcSchema = RpcSchema & [{
   ReturnType: GetConfigProofReturnType;
 }, {
   Method: "mksr_recover";
-  Parameters: [Hex, Hex, string, Hex];
+  Parameters: [Hex, Hex, Hex, string];
   ReturnType: GetRecoverProofReturnType;
 }, {
   Method: "mksr_set";

@@ -1,5 +1,5 @@
 import { bundlerActions, BundlerClient } from "permissionless";
-import { Address, createPublicClient, encodeAbiParameters, fromHex, Hex, http, keccak256, toHex } from "viem";
+import { Address, createPublicClient, encodeAbiParameters, fromHex, Hex, http, HttpTransportConfig, keccak256, toHex } from "viem";
 import { privateKeyToAccount, sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../../../generated";
@@ -18,10 +18,18 @@ export const client: BundlerClient = createPublicClient({
   ),
 }).extend(bundlerActions);
 
+const keyspaceClientConfig: HttpTransportConfig = {
+  // By default, viem will retry failed requests 3 times. It considers timeouts
+  // as failures and will retry them as well.
+  retryCount: 0,
+  timeout: 30_000,
+};
+
 export const keyspaceClient = createPublicClient({
   chain,
   transport: http(
     process.env.KEYSPACE_RPC_URL || "https://sepolia-alpha.key.space",
+    keyspaceClientConfig,
   ),
 }).extend(keyspaceActions());
 
