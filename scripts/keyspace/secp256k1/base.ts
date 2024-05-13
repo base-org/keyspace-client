@@ -1,5 +1,5 @@
 import { bundlerActions, BundlerClient } from "permissionless";
-import { Address, createPublicClient, encodeAbiParameters, fromHex, Hex, http, HttpTransportConfig, keccak256, toHex } from "viem";
+import { Address, Client, createPublicClient, encodeAbiParameters, fromHex, Hex, http, HttpTransportConfig, keccak256, toHex } from "viem";
 import { privateKeyToAccount, sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../../../generated";
@@ -11,10 +11,17 @@ import { getKeyspaceKey, serializePublicKeyFromPrivateKey } from "../../../utils
 
 const chain = baseSepolia;
 
-export const client: BundlerClient = createPublicClient({
+export const client: Client = createPublicClient({
   chain,
   transport: http(
     process.env.RPC_URL || "",
+  ),
+});
+
+export const bundlerClient: BundlerClient = createPublicClient({
+  chain,
+  transport: http(
+    process.env.BUNDLER_RPC_URL || "",
   ),
 }).extend(bundlerActions);
 
@@ -88,7 +95,7 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
     stateProof: keyspaceProof.proof,
   });
 
-  const opHash = await client.sendUserOperation({
+  const opHash = await bundlerClient.sendUserOperation({
     userOperation: op,
     entryPoint: entryPointAddress,
   });
