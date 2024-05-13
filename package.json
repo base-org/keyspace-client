@@ -3,6 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
+    "@types/argparse": "^2.0.16",
     "@wagmi/cli": "^2.1.0",
     "bun-types": "latest"
   },

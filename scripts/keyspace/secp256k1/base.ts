@@ -47,13 +47,16 @@ export function getDataHash(privateKey: Hex): Hex {
 }
 
 export async function getAccount(): Promise<Address> {
-  // TODO: Update owners to refer to a keyspace key.
-  return await getAccountAddress(client as any, { owners: [abiEncodedEOA], nonce: 0n });
-}
-
-export async function getKeyspaceConfigProof(): Promise<GetConfigProofReturnType> {
   const dataHash = getDataHash(process.env.PRIVATE_KEY as Hex);
   const keyspaceKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
+  const owners = [{
+    ksKeyType: 1,
+    ksKey: fromHex(keyspaceKey, "bigint"),
+  }];
+  return await getAccountAddress(client as any, { owners, nonce: 0n });
+}
+
+export async function getKeyspaceConfigProof(keyspaceKey: Hex, dataHash: Hex): Promise<GetConfigProofReturnType> {
   const keyspaceProof = await keyspaceClient.getConfigProof({
     key: keyspaceKey,
     vkHash: vkHashEcdsaAccount,
@@ -64,22 +67,26 @@ export async function getKeyspaceConfigProof(): Promise<GetConfigProofReturnType
 }
 
 export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
-  const keyspaceProof = await getKeyspaceConfigProof();
-  // TODO: Include the keyspace proof in the user operation once the contracts
-  // support it.
+  const dataHash = getDataHash(process.env.PRIVATE_KEY as Hex);
+  const keyspaceKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
+  const keyspaceProof = await getKeyspaceConfigProof(keyspaceKey, dataHash);
 
   const account = await getAccount();
-  // TODO: Update signers to refer to a keyspace key.
   const op = await buildUserOp(client, {
     account,
-    signers: [abiEncodedEOA],
+    signers: [{ ksKey: fromHex(keyspaceKey, "bigint"), ksKeyType: 1 }],
     calls,
     paymasterAndData: paymasterData,
     passkeySigner: false,
   });
 
   const hash = getUserOpHash({ userOperation: op, chainId: BigInt(chain.id) });
-  op.signature = await signAndWrapEOA({ hash, privateKey: process.env.PRIVATE_KEY as Hex, ownerIndex: 0n });
+  op.signature = await signAndWrapEOA({
+    hash,
+    privateKey: process.env.PRIVATE_KEY as Hex,
+    keyspaceKey,
+    stateProof: keyspaceProof.proof,
+  });
 
   const opHash = await client.sendUserOperation({
     userOperation: op,

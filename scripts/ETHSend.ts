@@ -1,7 +1,7 @@
 import { Call } from "../utils/smartWallet";
 import * as webAuthnBase from "./base";
 import * as keyspaceSecp256k1Base from "./keyspace/secp256k1/base";
-import * as keyspaceWebAuthnBase from "./keyspace/webauthn/base";
+import * as keyspaceWebAuthnBase from "./keyspace/webAuthn/base";
 
 async function main() {
   let baseModule: any = webAuthnBase;

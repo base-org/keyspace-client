@@ -1,8 +1,13 @@
 import { BundlerClient, estimateUserOperationGas, UserOperation } from "permissionless";
-import { Address, Chain, encodeAbiParameters, encodeFunctionData, Hex, keccak256, PublicClient, Transport } from "viem";
+import { Address, Chain, encodeAbiParameters, encodeFunctionData, fromHex, Hex, keccak256, PublicClient, toHex, Transport } from "viem";
 import { estimateFeesPerGas, getBytecode, readContract } from "viem/actions";
 import { accountAbi, accountFactoryAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../generated";
 import { buildEOADummySignature } from "./signature";
+
+export interface KeyAndType {
+  ksKey: bigint;
+  ksKeyType: number;
+}
 
 export const PASSKEY_OWNER_DUMMY_SIGNATURE: Hex =
   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000170000000000000000000000000000000000000000000000000000000000000001949fc7c88032b9fcb5f6efc7a7b8c63668eae9871b765e23123bb473ff57aa831a7c0d9276168ebcc29f2875a0239cffdf2a9cd1c2007c5c77c071db9264df1d000000000000000000000000000000000000000000000000000000000000002549960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008a7b2274797065223a22776562617574686e2e676574222c226368616c6c656e6765223a2273496a396e6164474850596759334b7156384f7a4a666c726275504b474f716d59576f4d57516869467773222c226f726967696e223a2268747470733a2f2f7369676e2e636f696e626173652e636f6d222c2263726f73734f726967696e223a66616c73657d00000000000000000000000000000000000000000000";
@@ -17,7 +22,7 @@ export async function buildUserOp(
     passkeySigner = true,
   }: {
     account: Address;
-    signers: Hex[];
+    signers: KeyAndType[];
     calls: Call[];
     paymasterAndData: Hex;
     passkeySigner?: boolean;
@@ -46,7 +51,7 @@ export async function buildUserOp(
     initCode,
     callData,
     paymasterAndData,
-    signature: passkeySigner ? PASSKEY_OWNER_DUMMY_SIGNATURE : buildEOADummySignature({ ownerIndex: 0n }),
+    signature: passkeySigner ? PASSKEY_OWNER_DUMMY_SIGNATURE : buildEOADummySignature({ keyspaceKey: toHex(signers[0].ksKey) }),
     preVerificationGas: 1_000_000n,
     verificationGasLimit: 1_000_000n,
     callGasLimit: 1_000_000n,
@@ -64,7 +69,7 @@ export async function buildUserOp(
   };
 }
 
-export function getInitCode({ owners, index }: { owners: Hex[]; index: bigint }): Hex {
+export function getInitCode({ owners, index }: { owners: KeyAndType[]; index: bigint }): Hex {
   return `${accountFactoryAddress}${
     createAccountCalldata({
       owners,
@@ -77,7 +82,7 @@ export function createAccountCalldata({
   owners,
   nonce,
 }: {
-  owners: Hex[];
+  owners: KeyAndType[];
   nonce: bigint;
 }) {
   return encodeFunctionData({
@@ -89,13 +94,13 @@ export function createAccountCalldata({
 
 export async function getAccountAddress<TChain extends Chain | undefined>(
   client: PublicClient<Transport, TChain>,
-  { owners, nonce }: { owners: Hex[]; nonce: bigint },
+  { owners, nonce }: { owners: KeyAndType[]; nonce: bigint },
 ) {
   return await readContract(client, {
     abi: accountFactoryAbi,
     address: accountFactoryAddress,
     functionName: "getAddress",
-    args: [owners, nonce],
+    args: [owners as Readonly<KeyAndType>[], nonce],
   });
 }
 

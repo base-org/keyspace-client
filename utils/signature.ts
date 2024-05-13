@@ -11,6 +11,8 @@ import {
   stringToHex,
 } from "viem";
 import { sign, SignReturnType } from "viem/accounts";
+import { getPublicKeyPoint } from "./keyspace";
+import { secp256k1 } from "@noble/curves/secp256k1";
 
 export const WebAuthnAuthStruct = {
   components: [
@@ -37,13 +39,13 @@ export const WebAuthnAuthStruct = {
 const SignatureWrapperStruct = {
   components: [
     {
-      name: "ownerIndex",
-      type: "uint8",
+      name: "ksKey",
+      type: "uint256",
     },
     {
       name: "signatureData",
       type: "bytes",
-    },
+    }
   ],
   name: "SignatureWrapper",
   type: "tuple",
@@ -86,30 +88,34 @@ export function buildDummySignature({ ownerIndex, challenge }: { ownerIndex: big
   );
 }
 
-export function buildEOADummySignature({ ownerIndex }: { ownerIndex: bigint }) {
+export function buildEOADummySignature({ keyspaceKey }: { keyspaceKey: Hex }) {
+  const dummyPublicKey = new Uint8Array(65);
+  dummyPublicKey[0] = 4;
   return buildSignatureWrapperForEOA({
     signature: {
       r: "0x0000000000000000000000000000000000000000000000000000000000000000",
       s: "0x0000000000000000000000000000000000000000000000000000000000000000",
       v: 0n,
     },
-    ownerIndex,
+    keyspaceKey,
+    publicKey: dummyPublicKey,
+    stateProof: "0x",
   });
 }
 
-export function buildSignatureWrapper({ signatureData, ownerIndex }: { signatureData: Hex; ownerIndex: bigint }): Hex {
+export function buildSignatureWrapper({ signatureData, keyspaceKey }: { signatureData: Hex; keyspaceKey: Hex }): Hex {
   return encodeAbiParameters(
     [SignatureWrapperStruct],
     [
       {
-        ownerIndex,
+        ksKey: keyspaceKey,
         signatureData,
       },
     ],
   );
 }
 
-export function encodeSignatureDataSecp256k1(signature: SignReturnType) {
+export function encodePackedSignatureSecp256k1(signature: SignReturnType): Hex {
   return encodePacked(
     ["bytes32", "bytes32", "uint8"],
     [
@@ -120,20 +126,38 @@ export function encodeSignatureDataSecp256k1(signature: SignReturnType) {
   );
 }
 
+export function encodeWitnessSecp256k1(signature: SignReturnType, publicKeyX: Uint8Array, publicKeyY: Uint8Array, stateProof: Hex): Hex {
+  return encodeAbiParameters([
+    { name: "sig", type: "bytes" },
+    { name: "publicKeyX", type: "uint256" },
+    { name: "publicKeyY", type: "uint256" },
+    { name: "stateProof", type: "bytes" },
+  ], [
+    encodePackedSignatureSecp256k1(signature),
+    hexToBigInt("0x" + Buffer.from(publicKeyX).toString("hex") as Hex),
+    hexToBigInt("0x" + Buffer.from(publicKeyY).toString("hex") as Hex),
+    stateProof,
+  ])
+}
+
 export function buildSignatureWrapperForEOA(
-  { signature, ownerIndex }: { signature: SignReturnType; ownerIndex: bigint },
+  { signature, keyspaceKey, publicKey, stateProof }: { signature: SignReturnType; keyspaceKey: Hex, publicKey: Uint8Array; stateProof: Hex },
 ) {
-  const signatureData = encodeSignatureDataSecp256k1(signature);
-  return buildSignatureWrapper({ signatureData, ownerIndex });
+  const publicKeyPoint = getPublicKeyPoint(publicKey);
+  const signatureData = encodeWitnessSecp256k1(signature, publicKeyPoint.x, publicKeyPoint.y, stateProof);
+  return buildSignatureWrapper({ signatureData, keyspaceKey });
 }
 
 export async function signAndWrapEOA(
-  { hash, privateKey, ownerIndex }: { hash: Hex; privateKey: Hex; ownerIndex: bigint }
+  { hash, privateKey, keyspaceKey, stateProof }: { hash: Hex; privateKey: Hex; keyspaceKey: Hex; stateProof: Hex }
 ): Promise<Hex> {
   const signature = await sign({ hash, privateKey });
+  const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
   return buildSignatureWrapperForEOA({
     signature,
-    ownerIndex,
+    keyspaceKey,
+    publicKey,
+    stateProof,
   });
 }
 

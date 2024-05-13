@@ -11,7 +11,7 @@ export default defineConfig({
   contracts: [
     {
       abi: smartWalletFactoryABI,
-      address: "0x0BA5ED0c6AA8c49038F819E587E2633c4A9F428a",
+      address: "0x0BA5ED08ce9d8D797e51F22B697AA02648feF8B1",
       name: "AccountFactory",
     },
     {

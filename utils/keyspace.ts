@@ -143,21 +143,26 @@ export function serializePublicKeyFromPoint(x: Buffer, y: Buffer): Uint8Array {
   return serializePublicKey(publicKey);
 }
 
-/**
- * Pack a public key into the 256 byte Keyspace data record expected by the
- * EcsdaAccount circuit.
- */
-export function serializePublicKey(publicKey: Uint8Array): Uint8Array {
+export function getPublicKeyPoint(publicKey: Uint8Array): { x: Uint8Array; y: Uint8Array } {
   const encodingByte = publicKey.slice(0, 1);
   if (encodingByte[0] !== 4) {
     throw new Error("Invalid public key encoding");
   }
 
-  const publicKeyX = publicKey.slice(1, 33);
-  const publicKeyY = publicKey.slice(33, 65);
+  return {
+    x: publicKey.slice(1, 33),
+    y: publicKey.slice(33, 65),
+  };
+}
 
+/**
+ * Pack a public key into the 256 byte Keyspace data record expected by the
+ * EcsdaAccount circuit.
+ */
+export function serializePublicKey(publicKey: Uint8Array): Uint8Array {
+  const point = getPublicKeyPoint(publicKey);
   const keyspaceData = new Uint8Array(256);
-  keyspaceData.set(publicKeyX, 0);
-  keyspaceData.set(publicKeyY, 32);
+  keyspaceData.set(point.x, 0);
+  keyspaceData.set(point.y, 32);
   return keyspaceData;
 }

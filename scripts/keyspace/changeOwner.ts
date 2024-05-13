@@ -1,9 +1,9 @@
-import { Hex, encodePacked, fromHex, keccak256, toHex } from "viem";
+import { Hex, fromHex, keccak256, toHex } from "viem";
 import { getDataHash as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./secp256k1/base";
 import { getKeyspaceKey } from "../../utils/keyspace";
-import { vkHashWebAuthnAccount } from "../keyspace/webauthn/base";
-import { ECDSA, encodeSignatureDataSecp256k1, encodeSignatureDataWebAuthn, p256WebAuthnSign } from "../../utils/signature";
-import { getDataHash as getDataHashWebAuthn, authenticatorData } from "./webauthn/base";
+import { vkHashWebAuthnAccount } from "../keyspace/webAuthn/base";
+import { ECDSA, encodePackedSignatureSecp256k1, encodeSignatureDataWebAuthn, p256WebAuthnSign } from "../../utils/signature";
+import { getDataHash as getDataHashWebAuthn, authenticatorData } from "./webAuthn/base";
 import { sign } from "viem/accounts";
 import { ArgumentParser } from "argparse";
 
@@ -13,7 +13,7 @@ export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: 
   const newKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
   const newKey254 = toHex(fromHex(newKey, "bigint") >> BigInt(2), { size: 32 });
   const signature = await sign({ hash: newKey254, privateKey: currentPrivateKey });
-  const signatureData = encodeSignatureDataSecp256k1(signature);
+  const signatureData = encodePackedSignatureSecp256k1(signature);
   performSetConfig(keyspaceKey, newKey, "secp256k1", signatureData);
 }
 
