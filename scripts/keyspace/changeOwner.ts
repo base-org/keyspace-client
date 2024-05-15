@@ -44,8 +44,8 @@ async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" 
   });
 
   console.log("mksr_recover succeeded", recoverResult);
-  const fullHash = keccak256(recoverResult.currentVk);
-  const truncatedHash = fromHex(fullHash, "bytes").slice(0, 31);
+  const fullHash = keccak256(recoverResult.currentVk, "bytes");
+  const truncatedHash = fullHash.slice(0, 31);
   const vkHash = toHex(truncatedHash);
   console.log("vkHash", vkHash);
 

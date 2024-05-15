@@ -29,7 +29,7 @@ const keyspaceClientConfig: HttpTransportConfig = {
   // By default, viem will retry failed requests 3 times. It considers timeouts
   // as failures and will retry them as well.
   retryCount: 0,
-  timeout: 30_000,
+  timeout: 60_000,
 };
 
 export const keyspaceClient = createPublicClient({
@@ -44,7 +44,7 @@ export const eoa = privateKeyToAccount(process.env.PRIVATE_KEY as Hex || "");
 export const abiEncodedEOA = encodeAbiParameters([{ type: "address" }], [eoa.address]);
 // This verification key is not production-ready because it uses a locally
 // generated KZG commitment instead of one with a trusted setup.
-export const vkHashEcdsaAccount = "0x5F3AD85187D374A196B7F0091FDAE25710EC375C24D229618DBECA9FE16994";
+export const vkHashEcdsaAccount = "0xe513408e896618fd2b4877b44ecc81e6055647f6abb48e0356384fc63b2f72";
 
 export function getDataHash(privateKey: Hex): Hex {
   const publicKey = serializePublicKeyFromPrivateKey(privateKey);
