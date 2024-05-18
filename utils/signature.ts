@@ -217,6 +217,7 @@ export function p256WebAuthnSign(
   const message = encodePacked(["bytes", "bytes32"], [authenticatorData, clientDataJSONHash]);
   const sig = p256PrivateKey.sign(Buffer.from(message.slice(2), "hex"), "hex");
   let [r, s] = decodeAbiParameters([{ type: "uint256" }, { type: "uint256" }], `0x${sig}` as Hex);
+  // Restrict signature malleability to pass the check in webauthn-sol.
   const n = hexToBigInt("0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
   if (s > n / 2n) {
     s = n - s;

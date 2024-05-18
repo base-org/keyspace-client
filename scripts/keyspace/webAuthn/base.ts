@@ -6,7 +6,7 @@ import { entryPointAddress } from "../../../generated";
 import { signAndWrapWebAuthn, type ECDSA } from "../../../utils/signature";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
-import { serializePublicKeyFromPoint, getKeyspaceKey } from "../../../utils/keyspace";
+import { serializePublicKeyFromPoint, getKeyspaceKey, getKeyspaceConfigProof } from "../../../utils/keyspace";
 import { GetConfigProofReturnType } from "../../../keyspace-viem/actions/types";
 
 const chain = baseSepolia;
@@ -30,10 +30,23 @@ export const p256PrivateKey: ECDSA = ECDSA.fromJWK(jwk);
 export const authenticatorData = "0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000";
 // This verification key is not production-ready because it uses a locally
 // generated KZG commitment instead of one with a trusted setup.
-export const vkHashWebAuthnAccount = "0x3cfd9ed759df30f84356c8de1447d2bc3201cc5458fd237968135dfa27493a7d";
+export const vkHashWebAuthnAccount = "0x8035f6d10fc783cfb1b0f9392dff5b6bc3f3665e47b36374c19624e9675cd8";
 
-export async function getAccount(): Promise<Address> {
-  return await getAccountAddress(client as any, { owners: [p256PubKey()], nonce: 0n });
+
+export function getKeyspaceKeyForPrivateKey(privateKey: string): Hex {
+  const jwk = JSON.parse(privateKey);
+  const p256PrivateKey: ECDSA = ECDSA.fromJWK(jwk);
+  const dataHash = getDataHash(p256PrivateKey);
+  return getKeyspaceKey(vkHashWebAuthnAccount, dataHash);
+}
+
+export async function getAccount(privateKey: string): Promise<Address> {
+  const keyspaceKey = getKeyspaceKeyForPrivateKey(privateKey);
+  const owners = [{
+    ksKeyType: 2,
+    ksKey: fromHex(keyspaceKey, "bigint"),
+  }];
+  return await getAccountAddress(client as any, { owners, nonce: 0n });
 }
 
 export function getDataHash(privateKey: ECDSA): Hex {
@@ -43,27 +56,18 @@ export function getDataHash(privateKey: ECDSA): Hex {
   return toHex(truncatedHash);
 }
 
-export async function getKeyspaceConfigProof(): Promise<GetConfigProofReturnType> {
+export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
   const dataHash = getDataHash(p256PrivateKey);
   const keyspaceKey = getKeyspaceKey(vkHashWebAuthnAccount, dataHash);
-  const keyspaceProof = await keyspaceClient.getConfigProof({
-    key: keyspaceKey,
-    vkHash: vkHashWebAuthnAccount,
-    dataHash,
-  });
-  console.log(keyspaceProof);
-  return keyspaceProof;
-}
+  const keyspaceProof = await getKeyspaceConfigProof(keyspaceKey, dataHash);
 
-export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
-  const keyspaceProof = await getKeyspaceConfigProof();
-  // TODO: Include the keyspace proof in the user operation once the contracts
-  // support it.
-
-  const account = await getAccount();
+  const account = await getAccount(process.env.P256_JWK as string);
   const op = await buildUserOp(client, {
     account,
-    signers: [p256PubKey()],
+    signers: [{
+      ksKeyType: 2,
+      ksKey: fromHex(keyspaceKey, "bigint"),
+    }],
     calls,
     paymasterAndData: paymasterData,
   });
@@ -79,16 +83,4 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
   });
 
   console.log("opHash", opHash);
-}
-
-export function p256PubKey() {
-  const xBuffer = Buffer.from(jwk.x, "base64");
-  const xHex = `0x${xBuffer.toString("hex")}` as Hex;
-  const yBuffer = Buffer.from(jwk.y, "base64");
-  const yHex = `0x${yBuffer.toString("hex")}` as Hex;
-
-  return encodeAbiParameters(
-    [{ type: "bytes32" }, { type: "bytes32" }],
-    [xHex, yHex],
-  );
 }

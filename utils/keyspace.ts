@@ -16,6 +16,8 @@ import { sign, SignReturnType } from "viem/accounts";
 import { WebAuthnAuthStruct } from "./signature";
 import { poseidonPerm } from "@zk-kit/poseidon-cipher";
 import { secp256k1 } from "@noble/curves/secp256k1";
+import { keyspaceClient, vkHashEcdsaAccount } from "../scripts/keyspace/secp256k1/base";
+import { GetConfigProofReturnType } from "../keyspace-viem/actions/types";
 
 
 const KeyspaceSignatureWrapperStruct = {
@@ -128,7 +130,9 @@ export function getKeyspaceKey(vkHash: Hex, dataHash: Hex): Hex {
   // clear.
   // https://github.com/paulmillr/scure-starknet/blob/3905471/index.ts#L329-L336
   // The configured hasher from @zk-kit/poseidon-cipher seems to match the
-  // configuration for BN254 in mdehoog/poseidon.
+  // configuration for BN254 in mdehoog/poseidon, which should be a BW6-761
+  // poseidon hash. That curve forms a 2-pair with the BLS12-377 curve used in
+  // the TxHash proofs.
   const hash = poseidon([fromHex(vkHash, "bigint"), fromHex(dataHash, "bigint")]);
   return toHex(hash);
 }
@@ -166,3 +170,14 @@ export function serializePublicKey(publicKey: Uint8Array): Uint8Array {
   keyspaceData.set(point.y, 32);
   return keyspaceData;
 }
+
+export async function getKeyspaceConfigProof(keyspaceKey: Hex, dataHash: Hex): Promise<GetConfigProofReturnType> {
+  const keyspaceProof = await keyspaceClient.getConfigProof({
+    key: keyspaceKey,
+    vkHash: vkHashEcdsaAccount,
+    dataHash,
+  });
+  console.log(keyspaceProof);
+  return keyspaceProof;
+}
+
