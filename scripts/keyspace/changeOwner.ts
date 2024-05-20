@@ -1,11 +1,14 @@
 import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
-import { getDataHash as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./secp256k1/base";
+import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./secp256k1/base";
 import { getKeyspaceKey } from "../../utils/keyspace";
 import { vkHashWebAuthnAccount } from "../keyspace/webAuthn/base";
-import { ECDSA, encodePackedSignatureSecp256k1, encodeSignatureDataWebAuthn, p256WebAuthnSign } from "../../utils/signature";
-import { getDataHash as getDataHashWebAuthn, authenticatorData } from "./webAuthn/base";
+import { ECDSA, encodePackedSignature } from "../../utils/encodeSignatures/secp256k1";
+import { encodeWebAuthnAuth } from "../../utils/encodeSignatures/webAuthn";
+import { p256WebAuthnSign } from "../../utils/sign";
+import { getDataHashForPrivateKey as getDataHashWebAuthn, authenticatorData } from "./webAuthn/base";
 import { sign } from "viem/accounts";
 import { ArgumentParser } from "argparse";
+import { defaultToEnv } from "../../utils/argparse";
 const ECDSA = require("ecdsa-secp256r1");
 
 
@@ -14,7 +17,7 @@ export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: 
   const newKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
   const newKey254 = toHex(fromHex(newKey, "bigint") >> BigInt(2), { size: 32 });
   const signature = await sign({ hash: newKey254, privateKey: currentPrivateKey });
-  const signatureData = encodePackedSignatureSecp256k1(signature);
+  const signatureData = encodePackedSignature(signature);
   performSetConfig(keyspaceKey, newKey, "secp256k1", signatureData);
 }
 
@@ -33,7 +36,7 @@ export async function changeOwnerWebAuthn(keyspaceKey: Hex, currentPrivateKey: E
   // packed as (bytes32,bytes32,bytes) to include the public key for
   // this operation. The final bytes argument contains an ABI-encoded
   // WebAuthnAuth.
-  const webAuthnAuthEncoded = encodeSignatureDataWebAuthn({
+  const webAuthnAuthEncoded = encodeWebAuthnAuth({
     authenticatorData,
     clientDataJSON,
     r,
@@ -67,14 +70,6 @@ async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" 
   });
 }
 
-function defaultToEnv(varName: string) {
-  const value = process.env[varName];
-  if (!value) {
-    return { required: true };
-  }
-  return { default: value };
-}
-
 function main() {
   const parser = new ArgumentParser({
     description: "Change owner of a keyspace key",
@@ -84,7 +79,7 @@ function main() {
     help: "The keyspace key to change owner of",
     ...defaultToEnv("KEYSPACE_KEY"),
   });
-  parser.add_argument("--current-private-key", {
+  parser.add_argument("--private-key", {
     help: "The current private key of the owner",
     ...defaultToEnv("PRIVATE_KEY"),
   });
@@ -92,16 +87,16 @@ function main() {
     help: "The new private key of the owner",
     ...defaultToEnv("NEW_PRIVATE_KEY"),
   });
-  parser.add_argument("--circuit-type", {
+  parser.add_argument("--signature-type", {
     help: "The type of signature for the Keyspace key",
     default: "secp256k1",
   });
 
   const args = parser.parse_args();
-  if (args.circuit_type === "secp256k1") {
-    changeOwnerSecp256k1(args.keyspace_key, args.current_private_key, args.new_private_key);
-  } else if (args.circuit_type === "webauthn") {
-    const currentPrivateKey = ECDSA.fromJWK(JSON.parse(args.current_private_key));
+  if (args.signature_type === "secp256k1") {
+    changeOwnerSecp256k1(args.keyspace_key, args.private_key, args.new_private_key);
+  } else if (args.signature_type === "webauthn") {
+    const currentPrivateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
     const newPrivateKey = ECDSA.fromJWK(JSON.parse(args.new_private_key));
     changeOwnerWebAuthn(args.keyspace_key, currentPrivateKey, newPrivateKey);
   } else {

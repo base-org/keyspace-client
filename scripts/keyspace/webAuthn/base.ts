@@ -1,20 +1,36 @@
 import { bundlerActions, BundlerClient } from "permissionless";
-import { Address, createPublicClient, encodeAbiParameters, Hex, http, keccak256, fromHex, toHex } from "viem";
+import { Address, createPublicClient, encodeAbiParameters, Hex, http, keccak256, fromHex, toHex, Client } from "viem";
 import { baseSepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
 import { entryPointAddress } from "../../../generated";
-import { signAndWrapWebAuthn, type ECDSA } from "../../../utils/signature";
+import { encodeSignatureWrapper } from "../../../utils/encodeSignatures/webAuthn";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
 import { serializePublicKeyFromPoint, getKeyspaceKey, getKeyspaceConfigProof } from "../../../utils/keyspace";
 import { GetConfigProofReturnType } from "../../../keyspace-viem/actions/types";
+import { secp256k1 } from "@noble/curves/secp256k1";
+import { p256WebAuthnSign } from "../../../utils/sign";
+import { getDataHash } from "../../../utils/encodeSignatures/utils";
+
+type ECDSA = {
+  x: Buffer,
+  y: Buffer,
+  sign: (message: string, format: string) => Buffer,
+};
 
 const chain = baseSepolia;
 
-export const client: BundlerClient = createPublicClient({
+export const client: Client = createPublicClient({
   chain,
   transport: http(
     process.env.RPC_URL || "",
+  ),
+});
+
+export const bundlerClient: BundlerClient = createPublicClient({
+  chain,
+  transport: http(
+    process.env.BUNDLER_RPC_URL || "",
   ),
 }).extend(bundlerActions);
 
@@ -32,16 +48,17 @@ export const authenticatorData = "0x49960de5880e8c687434170f6476605b8fe4aeb9a286
 // generated KZG commitment instead of one with a trusted setup.
 export const vkHashWebAuthnAccount = "0x8035f6d10fc783cfb1b0f9392dff5b6bc3f3665e47b36374c19624e9675cd8";
 
+export function getDataHashForPrivateKey(privateKey: ECDSA): Hex {
+  const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
+  return getDataHash(pk256);
+}
 
-export function getKeyspaceKeyForPrivateKey(privateKey: string): Hex {
-  const jwk = JSON.parse(privateKey);
-  const p256PrivateKey: ECDSA = ECDSA.fromJWK(jwk);
-  const dataHash = getDataHash(p256PrivateKey);
+export function getKeyspaceKeyForPrivateKey(privateKey: ECDSA): Hex {
+  const dataHash = getDataHashForPrivateKey(privateKey);
   return getKeyspaceKey(vkHashWebAuthnAccount, dataHash);
 }
 
-export async function getAccount(privateKey: string): Promise<Address> {
-  const keyspaceKey = getKeyspaceKeyForPrivateKey(privateKey);
+export async function getAccount(keyspaceKey: Hex): Promise<Address> {
   const owners = [{
     ksKeyType: 2,
     ksKey: fromHex(keyspaceKey, "bigint"),
@@ -49,19 +66,8 @@ export async function getAccount(privateKey: string): Promise<Address> {
   return await getAccountAddress(client as any, { owners, nonce: 0n });
 }
 
-export function getDataHash(privateKey: ECDSA): Hex {
-  const publicKey = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
-  const fullHash = keccak256(publicKey);
-  const truncatedHash = fromHex(fullHash, "bytes").slice(0, 31);
-  return toHex(truncatedHash);
-}
-
-export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
-  const dataHash = getDataHash(p256PrivateKey);
-  const keyspaceKey = getKeyspaceKey(vkHashWebAuthnAccount, dataHash);
-  const keyspaceProof = await getKeyspaceConfigProof(keyspaceKey, dataHash);
-
-  const account = await getAccount(process.env.P256_JWK as string);
+export async function makeCalls(keyspaceKey: Hex, privateKey: ECDSA, calls: Call[], paymasterData = "0x" as Hex) {
+  const account = await getAccount(keyspaceKey);
   const op = await buildUserOp(client, {
     account,
     signers: [{
@@ -70,17 +76,38 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
     }],
     calls,
     paymasterAndData: paymasterData,
+    signatureType: "webauthn",
   });
 
-  op.verificationGasLimit = 800000n;
-
   const hash = getUserOpHash({ userOperation: op, chainId: BigInt(chain.id) });
-  op.signature = await signAndWrapWebAuthn({ hash, privateKey: p256PrivateKey, ownerIndex: 0n, authenticatorData });
+  op.signature = await signAndWrap({ hash, privateKey, keyspaceKey });
 
-  const opHash = await client.sendUserOperation({
+  const opHash = await bundlerClient.sendUserOperation({
     userOperation: op,
     entryPoint: entryPointAddress,
   });
 
   console.log("opHash", opHash);
+}
+
+export async function signAndWrap(
+  { hash, privateKey, keyspaceKey }: { hash: Hex; privateKey: ECDSA; keyspaceKey: Hex }
+): Promise<Hex> {
+  const signature = await p256WebAuthnSign({
+    challenge: hash,
+    authenticatorData,
+    p256PrivateKey: privateKey,
+  });
+  const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
+  const dataHash = getDataHash(pk256);
+  const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashWebAuthnAccount, dataHash);
+  return encodeSignatureWrapper({
+    signature,
+    keyspaceKey,
+    publicKey: {
+      x: privateKey.x,
+      y: privateKey.y,
+    },
+    configProof: configProof.proof,
+  });
 }

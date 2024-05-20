@@ -1,13 +1,14 @@
 import { bundlerActions, BundlerClient } from "permissionless";
 import { Address, Client, createPublicClient, encodeAbiParameters, fromHex, Hex, http, HttpTransportConfig, keccak256, toHex } from "viem";
-import { privateKeyToAccount, sign } from "viem/accounts";
+import { sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../../../generated";
-import { signAndWrapEOA } from "../../../utils/signature";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
-import { getKeyspaceKey, serializePublicKeyFromPrivateKey } from "../../../utils/keyspace";
-import { getKeyspaceConfigProof } from "../../../utils/keyspace";
+import { getKeyspaceConfigProof, getKeyspaceKey, serializePublicKeyFromBytes, serializePublicKeyFromPrivateKey } from "../../../utils/keyspace";
+import { encodeSignatureWrapper } from "../../../utils/encodeSignatures/secp256k1";
+import { secp256k1 } from "@noble/curves/secp256k1";
+import { getDataHash } from "../../../utils/encodeSignatures/utils";
 
 const chain = baseSepolia;
 
@@ -44,20 +45,17 @@ export const keyspaceClient = createPublicClient({
 // generated KZG commitment instead of one with a trusted setup.
 export const vkHashEcdsaAccount = "0xe513408e896618fd2b4877b44ecc81e6055647f6abb48e0356384fc63b2f72";
 
-export function getDataHash(privateKey: Hex): Hex {
-  const publicKey = serializePublicKeyFromPrivateKey(privateKey);
-  const fullHash = keccak256(publicKey);
-  const truncatedHash = fromHex(fullHash, "bytes").slice(0, 31);
-  return toHex(truncatedHash);
+export function getDataHashForPrivateKey(privateKey: Hex): Hex {
+  const pk256 = serializePublicKeyFromPrivateKey(privateKey);
+  return getDataHash(pk256);
 }
 
 export function getKeyspaceKeyForPrivateKey(privateKey: Hex): Hex {
-  const dataHash = getDataHash(privateKey);
+  const dataHash = getDataHashForPrivateKey(privateKey);
   return getKeyspaceKey(vkHashEcdsaAccount, dataHash);
 }
 
-export async function getAccount(privateKey: Hex): Promise<Address> {
-  const keyspaceKey = getKeyspaceKeyForPrivateKey(privateKey);
+export async function getAccount(keyspaceKey: Hex): Promise<Address> {
   const owners = [{
     ksKeyType: 1,
     ksKey: fromHex(keyspaceKey, "bigint"),
@@ -65,26 +63,21 @@ export async function getAccount(privateKey: Hex): Promise<Address> {
   return await getAccountAddress(client as any, { owners, nonce: 0n });
 }
 
-export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
-  const dataHash = getDataHash(process.env.PRIVATE_KEY as Hex);
-  const keyspaceKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
-  const keyspaceProof = await getKeyspaceConfigProof(keyspaceKey, dataHash);
-
-  const account = await getAccount(process.env.PRIVATE_KEY as Hex);
+export async function makeCalls(keyspaceKey: Hex, privateKey: Hex, calls: Call[], paymasterData = "0x" as Hex) {
+  const account = await getAccount(keyspaceKey);
   const op = await buildUserOp(client, {
     account,
     signers: [{ ksKey: fromHex(keyspaceKey, "bigint"), ksKeyType: 1 }],
     calls,
     paymasterAndData: paymasterData,
-    passkeySigner: false,
+    signatureType: "secp256k1",
   });
 
   const hash = getUserOpHash({ userOperation: op, chainId: BigInt(chain.id) });
-  op.signature = await signAndWrapEOA({
+  op.signature = await signAndWrap({
     hash,
-    privateKey: process.env.PRIVATE_KEY as Hex,
+    privateKey,
     keyspaceKey,
-    stateProof: keyspaceProof.proof,
   });
 
   const opHash = await bundlerClient.sendUserOperation({
@@ -93,4 +86,20 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
   });
 
   console.log("opHash", opHash);
+}
+
+export async function signAndWrap(
+  { hash, privateKey, keyspaceKey }: { hash: Hex; privateKey: Hex; keyspaceKey: Hex }
+): Promise<Hex> {
+  const signature = await sign({ hash, privateKey });
+  const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
+  const pk256 = serializePublicKeyFromBytes(publicKey);
+  const dataHash = getDataHash(pk256);
+  const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashEcdsaAccount, dataHash);
+  return encodeSignatureWrapper({
+    signature,
+    keyspaceKey,
+    publicKey,
+    configProof: configProof.proof,
+  });
 }

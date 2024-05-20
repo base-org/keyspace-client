@@ -1,23 +1,17 @@
 import { base64urlnopad } from "@scure/base";
 import {
-  decodeAbiParameters,
   encodeAbiParameters,
-  encodePacked,
   type Hex,
-  hexToBigInt,
   hexToBytes,
-  sha256,
-  stringToBytes,
   stringToHex,
   fromHex,
   toHex,
 } from "viem";
-import { sign, SignReturnType } from "viem/accounts";
-import { WebAuthnAuthStruct } from "./signature";
+import { WebAuthnAuthStruct } from "./encodeSignatures/webAuthn";
 import { poseidonPerm } from "@zk-kit/poseidon-cipher";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { keyspaceClient, vkHashEcdsaAccount } from "../scripts/keyspace/secp256k1/base";
-import { GetConfigProofReturnType } from "../keyspace-viem/actions/types";
+import { GetConfigProofReturnType, KeyspaceClient } from "../keyspace-viem/actions/types";
 
 
 const KeyspaceSignatureWrapperStruct = {
@@ -137,14 +131,11 @@ export function getKeyspaceKey(vkHash: Hex, dataHash: Hex): Hex {
   return toHex(hash);
 }
 
-export function serializePublicKeyFromPrivateKey(privateKey: Hex): Uint8Array {
-  const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
-  return serializePublicKey(publicKey);
-}
-
-export function serializePublicKeyFromPoint(x: Buffer, y: Buffer): Uint8Array {
-  const publicKey = Buffer.concat([Buffer.from([4]), x, y]);
-  return serializePublicKey(publicKey);
+export function serializePublicKeyFromPoint(x: Uint8Array, y: Uint8Array): Uint8Array {
+  const keyspaceData = new Uint8Array(256);
+  keyspaceData.set(x, 0);
+  keyspaceData.set(y, 32);
+  return keyspaceData;
 }
 
 export function getPublicKeyPoint(publicKey: Uint8Array): { x: Uint8Array; y: Uint8Array } {
@@ -163,18 +154,20 @@ export function getPublicKeyPoint(publicKey: Uint8Array): { x: Uint8Array; y: Ui
  * Pack a public key into the 256 byte Keyspace data record expected by the
  * EcsdaAccount circuit.
  */
-export function serializePublicKey(publicKey: Uint8Array): Uint8Array {
+export function serializePublicKeyFromBytes(publicKey: Uint8Array): Uint8Array {
   const point = getPublicKeyPoint(publicKey);
-  const keyspaceData = new Uint8Array(256);
-  keyspaceData.set(point.x, 0);
-  keyspaceData.set(point.y, 32);
-  return keyspaceData;
+  return serializePublicKeyFromPoint(point.x, point.y);
 }
 
-export async function getKeyspaceConfigProof(keyspaceKey: Hex, dataHash: Hex): Promise<GetConfigProofReturnType> {
-  const keyspaceProof = await keyspaceClient.getConfigProof({
+export function serializePublicKeyFromPrivateKey(privateKey: Hex): Uint8Array {
+  const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
+  return serializePublicKeyFromBytes(publicKey);
+}
+
+export async function getKeyspaceConfigProof(client: KeyspaceClient, keyspaceKey: Hex, vkHash: Hex, dataHash: Hex): Promise<GetConfigProofReturnType> {
+  const keyspaceProof = await client.getConfigProof({
     key: keyspaceKey,
-    vkHash: vkHashEcdsaAccount,
+    vkHash,
     dataHash,
   });
   console.log(keyspaceProof);

@@ -2,7 +2,7 @@ import { BundlerClient, estimateUserOperationGas, UserOperation } from "permissi
 import { Address, encodeAbiParameters, encodeFunctionData, Hex, keccak256 } from "viem";
 import { estimateFeesPerGas, getBytecode, readContract } from "viem/actions";
 import { accountAbi, entryPointAbi, entryPointAddress } from "../generated";
-import { buildEOADummySignature } from "./signature";
+import { buildDummySignature } from "./encodeSignatures/secp256k1";
 import { getInitCode, PASSKEY_OWNER_DUMMY_SIGNATURE } from "./smartWallet";
 
 export async function buildReplayableUserOp(
@@ -43,7 +43,7 @@ export async function buildReplayableUserOp(
     initCode,
     callData,
     paymasterAndData: "0x" as Hex,
-    signature: passkeySigner ? PASSKEY_OWNER_DUMMY_SIGNATURE : buildEOADummySignature({ ownerIndex: 0n }),
+    signature: passkeySigner ? PASSKEY_OWNER_DUMMY_SIGNATURE : buildDummySignature({ ownerIndex: 0n }),
     preVerificationGas: 1_000_000n,
     verificationGasLimit: 1_000_000n,
     callGasLimit: 1_000_000n,

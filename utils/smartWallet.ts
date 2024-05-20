@@ -1,8 +1,9 @@
-import { BundlerClient, estimateUserOperationGas, UserOperation } from "permissionless";
+import { estimateUserOperationGas, UserOperation } from "permissionless";
 import { Address, Chain, Client, encodeAbiParameters, encodeFunctionData, fromHex, Hex, keccak256, PublicClient, toHex, Transport } from "viem";
 import { estimateFeesPerGas, getBytecode, readContract } from "viem/actions";
 import { accountAbi, accountFactoryAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../generated";
-import { buildEOADummySignature } from "./signature";
+import { buildDummySignature as buildDummySecp256k1 } from "./encodeSignatures/secp256k1";
+import { buildDummySignature as buildDummyWebAuthn } from "./encodeSignatures/webAuthn";
 
 export interface KeyAndType {
   ksKey: bigint;
@@ -19,13 +20,13 @@ export async function buildUserOp(
     signers,
     calls,
     paymasterAndData = "0x",
-    passkeySigner = true,
+    signatureType,
   }: {
     account: Address;
     signers: KeyAndType[];
     calls: Call[];
     paymasterAndData: Hex;
-    passkeySigner?: boolean;
+    signatureType: "secp256k1" | "webauthn";
   },
 ): Promise<UserOperation> {
   let initCode: Hex = "0x";
@@ -45,13 +46,16 @@ export async function buildUserOp(
   });
   let maxFeesPerGas = await estimateFeesPerGas(client);
 
+  const dummySigFunc = signatureType === "secp256k1" ? buildDummySecp256k1 : buildDummyWebAuthn;
+  const signature = dummySigFunc({ keyspaceKey: toHex(signers[0].ksKey) });
+
   const op = {
     sender: account,
     nonce,
     initCode,
     callData,
     paymasterAndData,
-    signature: passkeySigner ? PASSKEY_OWNER_DUMMY_SIGNATURE : buildEOADummySignature({ keyspaceKey: toHex(signers[0].ksKey) }),
+    signature,
     preVerificationGas: 1_000_000n,
     verificationGasLimit: 1_000_000n,
     callGasLimit: 1_000_000n,

@@ -1,4 +1,6 @@
-import { Hash, Hex, RpcSchema } from "viem";
+import { Chain, Client, Hash, Hex, PublicActions, PublicRpcSchema, RpcSchema, Transport } from "viem";
+import { Prettify } from "viem/chains";
+import { KeyspaceActions } from "../decorators/keyspace";
 
 export type GetConfigProofParameters = {
   key: Hex;
@@ -45,3 +47,16 @@ export type MKSRRpcSchema = RpcSchema & [{
   Parameters: [Hex, Hex, Hex, Hex, Hex];
   ReturnType: null;
 }];
+
+export type KeyspaceClient<
+  transport extends Transport = Transport,
+  chain extends Chain | undefined = Chain | undefined,
+> = Prettify<
+  Client<
+    transport,
+    chain,
+    undefined,
+    PublicRpcSchema & MKSRRpcSchema,
+    PublicActions<transport, chain> & KeyspaceActions
+  >
+>;

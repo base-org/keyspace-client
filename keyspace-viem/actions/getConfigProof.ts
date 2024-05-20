@@ -1,5 +1,6 @@
-import { Chain, Client, EIP1193RequestFn, Hash, Transport } from "viem";
+import { Chain, Client, EIP1193RequestFn, Transport } from "viem";
 import { GetConfigProofParameters, GetConfigProofReturnType, MKSRRpcSchema } from "./types";
+import { stripLeadingZeros } from "./stripLeadingZeros";
 
 
 export async function getConfigProof<
@@ -11,6 +12,6 @@ export async function getConfigProof<
   const request = client.request as EIP1193RequestFn<MKSRRpcSchema>;
   return await request({
     method: "mksr_proof",
-    params: [parameters.key, parameters.vkHash, parameters.dataHash],
+    params: [stripLeadingZeros(parameters.key), stripLeadingZeros(parameters.vkHash), stripLeadingZeros(parameters.dataHash)],
   });
 }
