@@ -1,5 +1,5 @@
 import { bundlerActions, BundlerClient } from "permissionless";
-import { Address, createPublicClient, encodeAbiParameters, Hex, http, keccak256, fromHex, toHex, Client } from "viem";
+import { Address, createPublicClient, Hex, http, fromHex, Client } from "viem";
 import { baseSepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
 import { entryPointAddress } from "../../../generated";
@@ -7,8 +7,6 @@ import { encodeSignatureWrapper } from "../../../utils/encodeSignatures/webAuthn
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
 import { serializePublicKeyFromPoint, getKeyspaceKey, getKeyspaceConfigProof } from "../../../utils/keyspace";
-import { GetConfigProofReturnType } from "../../../keyspace-viem/actions/types";
-import { secp256k1 } from "@noble/curves/secp256k1";
 import { p256WebAuthnSign } from "../../../utils/sign";
 import { getDataHash } from "../../../utils/encodeSignatures/utils";
 

@@ -1,5 +1,5 @@
 import { bundlerActions, BundlerClient } from "permissionless";
-import { Address, Client, createPublicClient, encodeAbiParameters, fromHex, Hex, http, HttpTransportConfig, keccak256, toHex } from "viem";
+import { Address, Client, createPublicClient, fromHex, Hex, http, HttpTransportConfig } from "viem";
 import { sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../../../generated";
