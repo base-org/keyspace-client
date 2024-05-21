@@ -12,6 +12,6 @@ export async function setConfig<
   const request = client.request as EIP1193RequestFn<MKSRRpcSchema>;
   return await request({
     method: "mksr_set",
-    params: [stripLeadingZeros(parameters.key), stripLeadingZeros(parameters.newKey), stripLeadingZeros(parameters.currentVk), stripLeadingZeros(parameters.currentData), stripLeadingZeros(parameters.proof)],
+    params: [stripLeadingZeros(parameters.key), stripLeadingZeros(parameters.newKey), parameters.currentVk, parameters.currentData, parameters.proof],
   });
 }

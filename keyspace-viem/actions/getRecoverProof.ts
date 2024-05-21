@@ -12,6 +12,6 @@ export async function getRecoverProof<
   const request = client.request as EIP1193RequestFn<MKSRRpcSchema>;
   return await request({
     method: "mksr_recover",
-    params: [stripLeadingZeros(parameters.key), stripLeadingZeros(parameters.newKey), stripLeadingZeros(parameters.signature), parameters.circuitType],
+    params: [stripLeadingZeros(parameters.key), stripLeadingZeros(parameters.newKey), parameters.signature, parameters.circuitType],
   });
 }
