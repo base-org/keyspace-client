@@ -1,5 +1,5 @@
 import { defineConfig } from 'vocs';
- 
+
 export default defineConfig({
   title: 'Keyspace',
   description: 'Key and configuration management for cross-chain applications',
