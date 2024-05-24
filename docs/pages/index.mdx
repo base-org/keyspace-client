@@ -1,0 +1,20 @@
+---
+title: Getting Started
+description: How to use Keyspace to build cross-chain wallets and other applications
+---
+
+# Getting Started
+
+Keyspace is a cross-chain key/value store for smart wallet keys and other configuration. The primary goal of the project is to help wallet vendors build smart wallets that match the cross-chain user experience of externally-owned accounts in Ethereum: one address can be used on all current and future chains.
+
+Since smart wallets typically store their configuration in their contract's storage, they've mostly been considered single-chain wallets where each instance has its own configuration and potentially a completely different address. We believe that ERC 4337 smart wallets are the future: passkey signers, paymasters, and batch transactions dramatically improve the experiences builders can provide for their users. But to deliver on that promise, we need users to be confident that assets sent to their Ethereum address are in their control, regardless of what chains those assets are on.
+
+You can read more about how Keyspace works in [Architecture](/architecture), or dive into adding Keyspace support to your wallet's [Clients](/clients) and [Contracts](/contracts).
+
+Keyspace is built by the Base team as open, neutral infrastructure for all chains and wallets to rely on. It's inspired by Vitalik's initial design for a [dedicated minimal rollup for keystores](https://notes.ethereum.org/@vbuterin/minimal_keystore_rollup).
+
+
+* [Coinbase Smart Wallet](https://www.smartwallet.dev/) Keyspace integration
+  * [JavaScript Client](https://github.com/niran/scw-tx/tree/keyspace-beta)
+  * [Smart Contracts](https://github.com/coinbase/smart-wallet/tree/baptiste/keyspace/src)
+* [Example Go Client](https://github.com/base-org/keyspace-example)

@@ -1,0 +1,26 @@
+---
+title: Authentication & Circuits
+---
+
+# Authentication & Circuits
+
+When you're building a Keyspace-integrated smart wallet, your authentication logic will be duplicated: your smart contract needs to verify the signatures when processing transactions, but now so does your `Account` circuit to verify signatures when the user wants to change their key configuration. The changes needed to your contracts are described in [Contracts](/contracts).
+
+The `Account` circuit facilitates zero-knowledge SNARK proofs that an authorized user has changed the wallet's configuration. All `Account` circuits take the `currentData` of the Keyspace record and the `newKey` as public inputs. Note that `newKey` does not actually change the record's constant key: it's merely a commitment to the new configuration that is calculated in the same manner as the original key.
+
+## Current Circuits
+
+### EcdsaAccount
+
+Authorize key configuration changes with an secp256k1 signature, just like Ethereum EOA signatures.
+
+### WebAuthnAccount
+
+Authorize key configuration changes with a WebAuthn passkey signature, which uses the secp256r1 (P256) curve and standard WebAuthn signature payloads.
+
+## Planned Circuits
+
+### M-of-N Multisig
+
+Configure one or more secp256k1 or WebAuthn signers along with a threshold for how many signatures are required to update the configuration. We expect this circuit to be repurposed for more Keyspace integrations, even for wallets that aren't explicitly multisignature wallets.
+

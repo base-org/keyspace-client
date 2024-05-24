@@ -1,0 +1,480 @@
+---
+title: Original Specification
+---
+
+# Minimal KeyStore Rollup spec
+
+A spec for Vitalik's [Dedicated minimal rollup for keystores](https://notes.ethereum.org/@vbuterin/minimal_keystore_rollup).
+
+## Introduction
+
+As account abstraction gains momentum, users will start using smart-contract wallets (SCW) across many chains. This presents a challenge: how does one keep their wallets across chains in sync? In particular, if a user changes their signing key on one L2, how does that change propagate to other chains?
+
+These problems and some solutions are discussed in Vitalik's [Deeper dive on cross-L2 reading for wallets and other use cases](https://vitalik.eth.limo/general/2023/06/20/deeperdive.html) post.
+
+## Requirements
+
+Let's first describe the desired feature set. A solution should enable the following for SCWs:
+
+ - New wallets are usable across all chains immediately: no need to wait for state sync or messages between chains.
+ - Transaction fees using this wallet are reasonable on L2s.
+ - The cost of updating your signer is reasonable ($1 is probably okay, but no > $10).
+ - Signer updates are propagated to all chains within a reasonable amount of time (ideally a few minutes, 1 hour max).
+ - Wallet implementations can define custom logic for both signature verification and signer changes. Examples:
+     - secp256r1 passkey wallet with a single signer
+     - secp256k1 multsig wallet with m of n threshold requirements
+     - BLS or EdDSA signature verification
+
+## Solution
+
+We create a new Minimal KeyStore Rollup (MKSR), which is a [based rollup](https://ethresear.ch/t/based-rollups-superpowers-from-l1-sequencing/15016) that stores its merkle tree state root on L1. It is an implementation of the [ZK-SNARK proof solution outlined](https://vitalik.eth.limo/general/2023/06/20/deeperdive.html#how-would-zk-snark-proofs-work) in the deeper dive post.
+
+If a user wants to change their SCW signers, they can submit a SNARK that proves access to the current signers of their SCW. Users can choose to submit this proof to a separate MKSR mempool, or directly to L1 which provides a forced-inclusion mechanism. These proofs are verified in-circuit, to save gas costs of recovery operations.
+
+To send transactions from a SCW that uses this rollup, users can generate a SNARK of a merkle proof to prove the current signers of their SCW, on any chain that has access to the MKSR state root stored on L1.
+
+:::success
+While we designed this primarily to solve the problem of cross-chain keystore state, it could be used to store configuration for any purpose. It is simply a permissionless provable multichain KV store.
+:::
+
+## Design
+
+### Rollup state
+
+The state of the rollup is stored as a BN254 poseidon [indexed merkle tree](https://docs.aztec.network/learn/concepts/storage/trees/indexed_merkle_tree) (IMT), using a depth of 64. Each key-value pair in the tree encodes a user's current SCW configuration (e.g. signers + threshold).
+
+### Wallet creation
+
+Users create a ZK circuit (see [`Account` circuit](#Account-circuit)) that defines the logic for verifying and updating their signer. This circuit is compiled using PLONK on BLS12-377 to generate a proving key and verification key (`original_vk`). Alternatively the user can choose from a list of pre-compiled circuits that implement different logic (e.g. a ECDSA signature check, or a basic hashed password check, etc).
+
+Users then define a 256-byte array (`original_data`) that contains the SCW signer configuration. In the simplest case, this could contain a secp256k1 public key, or a number of public keys with multisig threshold rules attached.
+
+The user's `key` is defined as:
+```
+key = poseidon_bn254(keccak256(original_vk) >> 8, keccak256(original_data) >> 8)
+```
+
+This `key` is the key used for IMT exclusion / inclusion proofs.
+
+:::info
+The `keccak256` hashes are right-shifted by `8` bits to ensure they fit within field elements (theoretically could shift by `3`, but `8` makes the in-circuit keccak slightly simpler by sticking to byte boundaries). This is also done below for other instances of `keccak256` hashes.
+:::
+
+The circuit must accept 10 public inputs: 9 field elements of the 256-byte `data` (first 8 contain 31-byte chunks, last one contains the final 8 bytes), and one additional element for the `newKey`. The circuit can choose to verify against the `data` + `newKey`; for example, it could check that a valid ECDSA signature of `newKey` was provided.
+
+In order to generate constant-size verification keys and proofs for different circuits, these circuits are expected to have exactly 3 commitments.
+
+### Usage of `key` from wallets
+
+Users create a SCW that hardcodes their `key` as an immutable value. In order to validate the current state of `key`, the SCW signature validation logic could do the following (in the simple ECDSA case mentioned above):
+ - Require a `signature`, `publicKey`, and `stateProof` as inputs
+ - Verify that the `signature` signs the expected data (e.g. the `userOpHash`) with a private key for `publicKey`
+ - Verify that the `publicKey` passed is the current `value` in the IMT for the `key` hardcoded in the SCW, using a BN254 PLONK proof to verify IMT exclusion / inclusion (see [`State` circuit](#State-circuit)).
+
+In order to make wallets immediately useable without waiting for keystore propagation, users can provide exclusion proofs, proving that nothing exists in the IMT for their `key`. If they have performed a recovery in the past, they will have to provide an inclusion proof, proving that the current `value` in the key matches the `publicKey` they passed (encoded in the `data` variable that is hashed to the `newKey` value stored in the IMT).
+
+### Recovery via rollup
+
+To change a SCW signers (a.k.a. "recover"), a user can submit the following data to the MKSR rollup:
+ - `uint256 key`: the user's original key, calculated by `poseidon_bn254(keccak256(original_vk) >> 8, keccak256(original_data) >> 8)`
+ - `uint256 newKey`: the new key, calculated by `poseidon_bn254(keccak256(new_vk) >> 8, keccak256(new_data) >> 8)`
+ - `uint256 currentVkHash`: the current value of `vk` encoded in the IMT, or `original_vk` if no recovery has been performed for this `key` (`vk` must have already been submitted via `submitVk` above)
+ - `bytes currentData`: the current value of `data` encoded in the IMT, or `original_data` if no recovery has been performed for this `key` (can be a prefix of the 3)
+ - `bytes proof`: a proof that is verified against `currentVk`, when passing in `currentData` + `newKey >> 2` as public inputs
+
+Some time later, the prover will include this transaction in a block, which consists of submitting the `key`/`newKey` tuple to the `KeyStore` contract, along with the new IMT root and a state change proof.
+
+### Recovery via L1
+
+Alternatively, users can submit MKSR transactions directly to the `KeyStore` contract on L1.
+
+Every verification key `vk` must "register" with the         `KeyStore` contract before it can be used for L1 recovery. This saves calldata costs on the recovery path, because multiple users can share the same `vk` for popular account circuits. To register a `vk`, a user can call the `KeyStore.submitVk` function, which will `keccak256` hash the `vk`, right shift by `8`, and store it in a `mapping(uint256 => bool)` storage variable.
+
+In order to perform a recovery, a user submits the same set of fields as [above](#Recovery-via-rollup) to the `KeyStore` contract on L1. The `KeyStore` contract calculates the `keccak256` hash of these inputs concatenated, and prepended with the previous hash:
+```
+currentDataHash = uint256(keccak256(currentData)) >> 8;
+txHash = uint256(keccak256(abi.encodePacked(
+    txHash, originalKey, newKey, currentVkHash, currentDataHash, proof
+))) >> 8;
+```
+
+This acts as an forced-inclusion / anti-censorship mechanism. When proving blocks, the `KeyStore` contract uses `txHash` as a public input to the proof verification. The prover must perform the same hashes in-circuit, therefore proving that each transaction was included in the same order. This makes the rollup a [based rollup](https://ethresear.ch/t/based-rollups-superpowers-from-l1-sequencing/15016).
+
+### Contracts
+
+A barebones `KeyStore` contract:
+
+```solidity
+contract KeyStore {
+    struct OffchainTransaction {
+        uint256 originalKey;
+        uint256 newKey;
+    }
+    
+    uint256 public root;
+
+    mapping(uint256 => bool) public knownVk;
+    uint256 public txHash;
+    uint256 public pendingTxHash;
+
+    IVerifier public immutable blockVerifier;
+
+    function submitVk(bytes calldata vk) external {
+        uint256 h = uint256(keccak256(vk)) >> 8;
+        require(!knownVk[h], "vk already known");
+        knownVk[h] = true;
+    }
+
+    function recover(
+        uint256 originalKey,
+        uint256 newKey,
+        uint256 currentVkHash,
+        bytes calldata currentData,
+        bytes calldata proof
+    ) external {
+        require(knownVk[currentVkHash], "vk not known");
+
+        bytes memory currentDataFull = new bytes(256);
+        for (uint256 i = 0; i < currentData.length; i++) {
+            currentDataFull[i] = currentData[i];
+        }
+
+        uint256 currentDataHash = uint256(keccak256(currentDataFull)) >> 8;
+        pendingTxHash = uint256(keccak256(abi.encodePacked(pendingTxHash, originalKey, newKey, currentVkHash, currentDataHash, proof))) >> 8;
+    }
+
+    function prove(uint256 newRoot, OffchainTransaction[] calldata offchainTxs, bytes calldata proof) external {
+        uint256 allTxsHash = pendingTxHash;
+        for (uint256 i = 0; i < offchainTxs.length; i++) {
+            allTxsHash = uint256(keccak256(abi.encodePacked(allTxsHash, offchainTxs[i].originalKey, offchainTxs[i].newKey))) >> 8;
+        }
+        
+        uint256[] memory public_inputs = new uint256[](3);
+        public_inputs[0] = root;
+        public_inputs[1] = newRoot;
+        public_inputs[2] = allTxsHash;
+        require(blockVerifier.Verify(proof, public_inputs), "proof is invalid");
+
+        root = newRoot;
+        txHash = pendingTxHash;
+    }
+}
+```
+
+:::warning
+This contract is intentionally simplified; in reality there'll be some form of per-block `pendingTxHash` to avoid griefing attacks on the prover by submitting another transaction during proof generation (see [Rollup block proving](#Rollup-block-proving) below).
+:::
+
+### Circuits
+
+:::info
+We use BN254 for any proof verifications performed on the EVM, as Ethereum supports efficient verification of this curve since [EIP-196](https://eips.ethereum.org/EIPS/eip-196).
+
+We use BW6-761 as it forms a 2-chain with BLS12-377, making verification of BLS12-377 proofs efficient in BW6-761.
+
+A simpler design we explored early on used no recursion, and relied on users to submit BN254 proofs for recovery directly to the L1. However we deemed this a non-starter due to the high fees of recovery (2kb of calldata and 350k gas to verify a PLONK proof).
+:::
+
+There are 5 circuits involved in this design; 2 for each user's account ([`State`](#State-circuit), [`Account`](#Account-circuit)), and 3 specifically for the keystore ([`Hash`](#Hash-circuit), [`Batch`](#Batch-circuit), [`Update`](#Update-circuit)).
+
+#### `State` circuit
+
+The per-account circuit used by the SCW for verifying the key exclusion or key-value inclusion in the IMT. This is used for every SCW transaction, separate from recovery. This circuit is only used by the SCW and not the keystore, and therefore can be customized by the SCW builder. Generally the expectation is to accept the SCW `key`, the keystore's IMT `root`, and the `keccak256(currentData) >> 8` as public inputs, and perform the `key` IMT verification against the `root`. This uses the BN254 curve for cheap verification on Ethereum.
+
+##### Curve
+`BN254`
+
+##### Public inputs
+Variable|Type|Notes
+-|-|-
+`originalKey`|`BN254`|Immutable key for a SCW, calculated as: `poseidon_bn254(keccak256(original_vk) >> 8, keccak256(original_data) >> 8)`
+`root`|`BN254`|MKSR IMT state root
+`currentDataHash`|`BN254`|Hash of current SCW signer configuration, calculated as: `keccak256(current_data) >> 8`
+
+##### Private inputs
+Variable|Type|Notes
+-|-|-
+`currentVkHash`|`BN254`|Hash of current SCW verification key, calculated as:  `keccak256(current_vk) >> 8`
+`size`|`uint64`|Size of the IMT
+`currentValue`|`BN254`|Value of low-nullifier node for exclusion proofs, or `poseidon_bn254(keccak256(current_vk) >> 8, keccak256(current_data) >> 8)` for inclusion proofs.
+`index`|`uint64`|Index of low-nullifier node for exclusion proofs, index of `originalKey` node for inclusion proofs
+`nextKey`|`BN254`|`nextKey` of low-nullifier node for exclusion proofs, `nextKey` of `originalKey` node for inclusion proofs
+`lowKey`|`BN254`|`key` of low-nullifier node for exclusion proofs, `originalKey` for inclusion proofs
+`siblings`|`[64]BN254`|Merkle proof siblings
+
+##### Pseudocode
+```python
+inclusion = lowKey == originalKey
+currentKey = poseidonBN254(currentVkHash, currentDataHash)
+
+if inclusion:
+    assert(currentKey == currentValue)
+else:
+    assert(currentKey == originalKey)
+
+imtVerify(
+    root=root,
+    size=size,
+    key=originalKey,
+    value=currentValue,
+    index=index,
+    nextKey=nextKey,
+    lowKey=lowKey,
+    siblings=siblings,
+    inclusion=inclusion
+)
+```
+
+#### `Account` circuit
+
+The per-account circuit used to verify user-provided proofs for keystore updates. This can be customized by the user, and is required to accept `9` field elements representing the `data`, and one field element representing `newKey` as its public inputs. Uses the BLS12-377 curve. Verified within the `Batch` circuit below. The verifying key for this circuit is the user's `vk` value.
+
+##### Curve
+`BLS12-377`
+
+##### Public inputs
+Variable|Type|Notes
+-|-|-
+`currentData`|`[9]BLS12_377`|SCW `[256]byte` signer configuration (encoded into field elements as 8x 31-byte chunks and 1x 8-byte chunk)
+`newKey`|`BLS12_377`|New key for a SCW right-shifted by 2, calculated as: `poseidon_bn254(keccak256(new_vk) >> 8, keccak256(new_data) >> 8) >> 2`
+
+##### Private inputs (example for `secp256k1` signature account)
+Variable|Type|Notes
+-|-|-
+`signatureR`|`secp256k1`|`R` value of the signature
+`signatureS`|`secp256k1`|`S` value of the signature
+
+##### Pseudocode
+```python
+publicKey = currentData[0:3]
+verifySignature(
+    public=publicKey,
+    msg=newKey,
+    sig=[signatureR,signatureS]
+)
+```
+
+#### `Hash` circuit
+
+This circuit is responsible for ensuring that the prover-provided transaction data is correct by proving that the `keccak256` hash of the data matches the `txHash` input. Also verifies the `keccak256` hash of `currentVk` and `currentData`. Public input is a BW6-761 poseidon hash of the input data from the `Batch` circuit. Uses the BLS12-377 curve.
+
+##### Curve
+`BLS12-377`
+
+##### Public inputs
+Variable|Type|Notes
+-|-|-
+`inputHash`|`BW6_761`|Hash of "semi-public" inputs, calculated as: `poseidonBW6761(stateHash, currentVk, currentData, proof)`
+
+##### Private inputs (example for `secp256k1` signature account)
+Variable|Type|Notes
+-|-|-
+`currentVk`|`[39]BW6_761`|Current SCW PLONK verification key
+`currentData`|`[9]BW6_761`|SCW `[256]byte` signer configuration (encoded into field elements as 8x 31-byte chunks and 1x 8-byte chunk)
+`proof`|`[35]BW6_761`|User provided proof against `currentVk` with `currentData`/`newKey` as public inputs
+`originalKey`|`BN254`|Immutable key for a SCW, calculated as: `poseidon_bn254(keccak256(original_vk) >> 8, keccak256(original_data) >> 8)`
+`newKey`|`BN254`|New key for a SCW, calculated as: `poseidon_bn254(keccak256(new_vk) >> 8, keccak256(new_data) >> 8)`
+`nextTxHash`|`BN254`|`KeyStore` contract's `pendingTxHash` after this transaction was submitted (calculated as `keccak256(pendingTxHash, originalKey, newKey, currentVkHash, currentDataHash, proof) >> 8`)
+`prevTxHash`|`BLS12_377`|`KeyStore` contract's `pendingTxHash` before this transaction was submitted
+`offchain`|`boolean`|`1` if this transaction was submitted offchain directly to a rollup node
+`enabled`|`boolean`|`1` if this transaction has a valid proof and will modify the IMT state; must be `1` if `offchain == 1`
+
+##### Pseudocode
+```python
+currentVkHash = keccak256(currentVk)
+currentDataHash = keccak256(currentData)
+onchainTxHash = keccak256(prevTxHash, originalKey, newKey, currentVkHash, currentDataHash, proof)
+offchainTxHash = keccak256(prevTxHash, originalKey, newKey)
+assert((offchain ? offchainTxHash : onchainTxHash) == nextTxHash)
+
+currentKey = poseidonBN254(currentVkHash, currentDataHash)
+stateHash = poseidonBN254(enabled, originalKey, currentKey, newKey, nextTxHash)
+actualHash = poseidonBW6761(stateHash, currentVk, currentData, proof)
+assert(actualHash == inputHash)
+```
+
+#### `Batch` circuit
+
+Responsible for proving a batch or block of transactions. Uses the BW6-761 curve. Public input is a single BN254 poseidon hash of the state from the `Update` circuit. For every transaction in a keystore rollup block, this circuit does two in-circuit proof verifications:
+ - `Account`: ensure the user has provided a proof that verifies against the provided `vk`, `data`, and `newKey` values in the tx.
+ - `Hash`: ensure the prover is using the correct values for each transaction, and prevent any maliciously censoring.
+
+##### Curve
+`BW6-761`
+
+##### Public inputs
+Variable|Type|Notes
+-|-|-
+`stateHash`|`BN254`|Hash of "semi-public" inputs, calculated as: `poseidonBN254(selector, stateHashes...)`
+
+##### Private inputs (example for `secp256k1` signature account)
+Variable|Type|Notes
+-|-|-
+`selector`|`BW6_761`|Transaction validity selector as bitmask (valid proofs must mutate the IMT, invalid proofs must not mutate the IMT)
+`stateHashes`|`[TxCount]BN254`|Per-transaction hashes, calculated as `poseidonBN254(tx.originalKey, tx.currentKey, tx.newKey, tx.nextTxHash)`
+`txs`|`[TxCount]Transaction`|List of transactions
+
+`Transaction` type:
+Variable|Type|Notes
+-|-|-
+`newKey`|`BN254`|New key for a SCW, calculated as: `poseidon_bn254(keccak256(new_vk) >> 8, keccak256(new_data) >> 8)`
+`currentVk`|`[39]BW6_761`|Current SCW PLONK verification key
+`currentData`|`[9]BW6_761`|SCW `[256]byte` signer configuration (encoded into field elements as 8x 31-byte chunks and 1x 8-byte chunk)
+`proof`|`[35]BW6_761`|User provided proof against `currentVk` with `currentData`/`newKey` as public inputs
+`hashProof`|`[?]BW6_761`|Proof for [`Hash circuit`](#Hash-circuit) for this transaction
+
+##### Pseudocode
+```python
+actualHash = poseidonBN254(selector, stateHashes...)
+assert(actualHash == stateHash)
+
+selectorBits = toBinary(selector)
+for i, tx in txs:
+    valid = verifyProof(
+        vk=tx.currentVk,
+        public=[tx.currentData..., tx.newKey],
+        proof=tx.proof
+    ) # verifyProof must return 0 or 1
+    assert(valid == selector[i])
+    
+    stateHash = poseidonBW6761(tx.stateHash, tx.currentVk, tx.currentData, tx.proof)
+    valid = verifyHashProof(
+        public=[stateHash],
+        proof=tx.hashProof
+    )
+    assert(valid)
+```
+
+#### `Update` circuit
+
+This circuit is responsible for verifying IMT updates for each transaction in a block. It also does an in-circuit verification for a proof for the `Batch` circuit below. Public inputs are `OldRoot`, `NewRoot`, and `TxHash`. Uses the BN254 curve, and verified on Ethereum from the `KeyStore` contract.
+
+##### Curve
+`BN254`
+
+##### Public inputs
+Variable|Type|Notes
+-|-|-
+`oldRoot`|`BN254`|Old IMT root before all transactions
+`newRoot`|`BN254`|New IMT root after all transactions
+`txHash`|`BN254`|`KeyStore` contract's `pendingTxHash` after all transactions
+
+##### Private inputs (example for `secp256k1` signature account)
+Variable|Type|Notes
+-|-|-
+`selector`|`BN254`|Transaction validity selector as bitmask (valid proofs must mutate the IMT, invalid proofs must not mutate the IMT)
+`updates`|`[TxCount]Update`|List of IMT updates
+`proof`|`[?]BW6_761`|Proof of [`Batch circuit`](#Batch-circuit)
+
+`Update` type:
+Variable|Type|Notes
+-|-|-
+`originalKey`|`BN254`|Immutable key for a SCW, calculated as: `poseidon_bn254(keccak256(original_vk) >> 8, keccak256(original_data) >> 8)`
+`currentKey`|`BN254`|Current key for a SCW, calculated as: `poseidon_bn254(keccak256(current_vk) >> 8, keccak256(current_data) >> 8)`
+`newKey`|`BN254`|New key for a SCW, calculated as: `poseidon_bn254(keccak256(new_vk) >> 8, keccak256(new_data) >> 8)`
+`nextTxHash`|`BN254`|`KeyStore` contract's `pendingTxHash` after this transaction was submitted (calculated as `keccak256(pendingTxHash, originalKey, newKey, currentVkHash, currentDataHash, proof) >> 8`)
+`oldSize`|`uint64`|IMT size before the change
+`nextKey`|`BN254`|`nextKey` of low-nullifier node for inserts, `nextKey` of `originalKey` node for updates
+`lowKey`|`BN254`|`key` of low-nullifier node for inserts, `originalKey` for updates
+`lowValue`|`BN254`|`value` of low-nullifier node for inserts, `currentKey` for updates
+`lowIndex`|`uint64`|Index of low-nullifier node for inserts, index of `originalKey` node for updates
+`siblings`|`[64]BN254`|Merkle proof siblings for mutating the `originalKey` node
+`lowSiblings`|`[64]BN254`|Merkle proof siblings for updating the low-nullifier node for inserts (same as `siblings` for updates)
+`oldSiblings`|`[64]BN254`|Merkle proof siblings for old value verification (same as `siblings` for updates)
+
+##### Pseudocode
+```python
+selectorBits = toBinary(selector)
+root = oldRoot
+stateHashes = [selector]
+
+for i, u in updates:
+    update = (u.originalKey == u.lowKey)
+    
+    newRoot = imtMutate(
+        oldRoot=root,
+        key=u.originalKey,
+        value=u.newKey,
+        nextKey=u.nextKey,
+        index=u.index,
+        lowKey=u.lowKey,
+        lowValue=u.lowValue,
+        lowIndex=u.lowIndex,
+        siblings=u.siblings,
+        lowSiblings=u.lowSiblings,
+        oldSiblings=u.oldSiblings,
+        exists=exists
+    )
+    updateValid = u.currentKey == (update ? u.lowValue : u.originalKey)
+    root = (updateValid && selector[i]) ? newRoot : root
+    
+    stateHashes.push(poseidonBN254(selector[i], u.originalKey, u.currentKey, u.newKey, u.nextTxHash))
+
+valid = verifyBatchProof(
+    public=[poseidonBN254(stateHashes...)],
+    proof=proof
+)
+assert(valid)
+```
+
+### Rollup block proving
+
+The `prove` method is permissionless, anyone can submit a block proof (to the [`Update`](#Update-circuit) circuit) to move the rollup forward.
+
+In order to calculate a valid proof, the prover must:
+ - Generate [`Hash`](#Hash-circuit) proofs for each transaction submitted to the `KeyStore.recover` method
+ - Verify (or not) each of the proofs provided in the transactions, and generate a `selector` with `1` bits for valid proofs and `0` bits for invalid proofs
+ - Generate a [`Batch`](#Batch-circuit) proof, using the `Hash` proofs and transaction proofs as inputs.
+ - Calculate the new root of the IMT, given the updates given in transactions with valid proofs.
+ - Generate an [`Update`](#Update-circuit) proof, and submit that to the `KeyStore.prove` method.
+
+The KeyStore contract could accept blocks of different sizes by generating circuits with different `TxCount` constants. Note that given the tx validity `selector`, the current design cannot include more than 253 transactions in a single block. In reality we'll likely limit this to 128 txs per block for easier proof generation.
+
+There's a race condition in that a user can submit a transaction while the prover is proving the current set of transactions indicated by `Keystore.pendingTxHash`. We'll either solve this by storing every unproved `txHash` in storage, or store every 16th or 32nd hash, so a prover can prove constant size blocks of transactions without being griefed. There's a tradeoff around cost of proof submission and keeping the IMT state root fresh from recent transactions.
+
+### Economics
+
+*WIP*
+
+There must be some incentive for a prover to provide proofs for the rollup to be functional. A few options for this:
+ - Users are required to pay for their transaction proof upfront with some `msg.value` as part of calling `KeyStore.recover`. This could be distributed to provers. Optionally Users could receive refunds if their transaction is part of a larger batch (and therefore cheaper per tx, given fees of proof submission are constant).
+ - The keystore contract could have some tipping functionality, requiring entities to incentivize provers by storing bounties in the contract.
+ - Some form of [Dutch reverse auction](https://en.wikipedia.org/wiki/Reverse_auction#Dutch_reverse_auctions) could work, where the proving reward increases over time, and resets when a proof is submitted.
+
+### Trusted setup
+
+There are three trusted setups required for this proposal:
+ - `BN254` KZG for the `Update` circuit (approx. 45m constraints)
+     - We can likely reuse the Hermez trusted setup here
+ - `BW6-671` KZG for the `Batch` circuit (approx. ? constraints)
+ - `BLS12-377` KZG for the `Hash` + `Account` circuits (approx. 20m constraints)
+
+We'll need Powers of Tau ceremonies for these, or rely on others (see some linked [here](https://github.com/Consensys/gnark/discussions/1014)).
+
+## Syncing keystore root to L2s
+
+There is currently no standardized way to read L1 state on L2s. Most L2s have some ability to reference the current L1 block hash, which can be used to prove the current value of `KeyStore.root` using an merkle-patricia-tree (MPT) proof.
+
+Some L2s have support for sending messages from L1 to L2 via "deposits". These mechanisms can be used to trustlessly sync the keystore root from L1 to L2s.
+
+## Stealth addresses
+
+This rollup can be used for [stealth addresses](https://vitalik.eth.limo/general/2023/01/20/stealth.html) with no changes to the protocol. We can add a `salt` to the `key` that is stored in a SCW, such that the key becomes:
+```
+imt_key = poseidon_bn254(keccak256(original_vk) >> 8, keccak256(original_data) >> 8)
+scw_key = poseidon_bn254(salt, imt_key)
+```
+
+The [`State`](#State-circuit) circuit then takes the `salt` as an additional private input, and performs the additional hash in-circuit.
+
+Thus Alice can generate a counterfactual address for a SCW controlled by Bob's key by generating a random salt (as long as she knows Bob's `imt_key`).
+
+## Future improvements
+
+#### 4337 + PLONK proof enshrinement
+Currently there's still a pretty large gas cost for each SCW transaction for wallets that use the keystore. Verifying a PLONK proof is mostly compute gas which is generally cheap on L2s with blocks below their target gas (and therefore the base fee is low). However the proof size is ~1kb and calldata is the bulk of the cost of transactions on L2s. 4844 will help here, and we can do some aggregation of these proofs for multiple keystore txs in a bundle.
+
+Any protocol improvements that reduce the cost of 4337 and/or PLONK verification would reduce fees further.
+
+#### Blob DA
+Right now all keystore rollup transactions are submitted as calldata to the L1 by the user or prover. We could reduce costs of transactions by submitting batches of transactions as 4844 blobs. Note however that this would increase the time-to-finality of the IMT root update for each transaction, as we have to wait for blobs to fill up before it makes sense to post and prove them.

@@ -1,0 +1,240 @@
+---
+title: Clients
+---
+
+# Clients
+
+Once a smart contract wallet has integrated Keyspace support, the client software needs to add support as well.
+
+## Sending Transactions
+
+Transactions for Keyspace wallets are authorized by the user's signature alongside a proof of the wallet's current configuration in Keyspace. Keyspace's [`mksr_proof`](#keyspace-rpc-api) RPC call retrieves the needed proof from a Keyspace node.
+
+```ts twoslash
+import { Hex, createPublicClient, http } from "viem";
+import { baseSepolia } from "viem/chains";
+import { sign } from "viem/accounts";
+import { getKeyspaceConfigProof, serializePublicKeyFromBytes } from "./utils/keyspace";
+import { encodeSignatureWrapper } from "./utils/encodeSignatures/secp256k1";
+import { secp256k1 } from "@noble/curves/secp256k1";
+import { getDataHash } from "./utils/encodeSignatures/utils";
+import { keyspaceActions } from "./keyspace-viem/decorators/keyspace";
+
+const chain = baseSepolia;
+const vkHashEcdsaAccount = "0xe513408e896618fd2b4877b44ecc81e6055647f6abb48e0356384fc63b2f72";
+const keyspaceClient = createPublicClient({
+  chain,
+  transport: http(
+    process.env.KEYSPACE_RPC_URL || "https://sepolia-alpha.key.space"
+  ),
+}).extend(keyspaceActions());
+
+// ---cut---
+export async function signAndWrap(
+  { hash, privateKey, keyspaceKey }: { hash: Hex; privateKey: Hex; keyspaceKey: Hex }
+): Promise<Hex> {
+  const signature = await sign({ hash, privateKey });
+  const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
+  const pk256 = serializePublicKeyFromBytes(publicKey);
+  const dataHash = getDataHash(pk256);
+  const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashEcdsaAccount, dataHash);
+  return encodeSignatureWrapper({
+    signature,
+    keyspaceKey,
+    publicKey,
+    configProof: configProof.proof,
+  });
+}
+```
+
+:::warning
+Most ERC 4337 bundlers will reject transactions from wallets that use Keyspace because accessing storage slots outside of the wallet contract is prohibited by the spec, but is required to check the Keyspace state. For now, we recommend using the Pimlico bundler, which does not enforce this constraint. Production wallets will use an ERC 4337 "aggregator," which is allowed to access external storage.
+:::
+
+## Changing Keys
+
+Changes to owner keys are written to Keyspace instead of the smart contract itself. The smart contract picks up key changes through the configuration proofs that are provided with each transaction and are verified against the latest Keyspace state root.
+
+To change the configuration stored in Keyspace, the user needs to sign the new configuration, then generate a zero-knowledge proof with the appropriate `Account` circuit for their wallet to demonstrate to Keyspace that they're authorized to make the change.
+
+### Sign the New Configuration
+
+`Account` proofs require a signature of the `newKey`. This isn't a "new key," it's a commitment to the new configuration to be stored in the Keyspace record, and this commitment is constructed in the same manner as the original key for the wallet.
+
+```ts twoslash
+import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
+import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./scripts/keyspace/secp256k1/base";
+import { getKeyspaceKey } from "./utils/keyspace";
+import { encodePackedSignature } from "./utils/encodeSignatures/secp256k1";
+import { sign } from "viem/accounts";
+
+export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: Hex, newPrivateKey: Hex) {
+// ---cut---
+  const dataHash = getDataHashSecp256k1(newPrivateKey);
+  const newKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
+  const newKey254 = toHex(fromHex(newKey, "bigint") >> BigInt(2), { size: 32 });
+  const signature = await sign({ hash: newKey254, privateKey: currentPrivateKey });
+  const signatureData = encodePackedSignature(signature);
+// ---cut-after---
+  performSetConfig(keyspaceKey, newKey, "secp256k1", signatureData);
+}
+
+async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" | "webauthn", signatureData: Hex) {
+  const recoverResult = await keyspaceClient.getRecoverProof({
+    key,
+    newKey,
+    circuitType,
+    signature: signatureData,
+  });
+
+  await keyspaceClient.setConfig({
+    key,
+    newKey,
+    ...recoverResult,
+  });
+}
+```
+
+### Generate an `Account` Circuit Proof
+
+With a signature of the `newKey`, anyone can generate the `Account` proof needed to change the key. The proving key for these circuits can be quite large: our `EcdsaAccount` circuit has a 96MB proving key:
+
+```bash
+-rw-r--r--  1     65M Mar 13 14:57 51baa0cc62607033629f491a79cca59244f2d3b4d122d5dabb4f5c3d18a35155.ccs
+-rw-r--r--  1     96M Mar 13 14:57 51baa0cc62607033629f491a79cca59244f2d3b4d122d5dabb4f5c3d18a35155.pk
+-rw-r--r--  1     48K Mar 13 14:57 51baa0cc62607033629f491a79cca59244f2d3b4d122d5dabb4f5c3d18a35155.vk
+```
+
+Other than the size, the other obstacle to letting users generate their own proofs is that it isn't straightforward to [compile gnark circuits into the WebAssembly](https://hackmd.io/@vocdoni/B1VPA99Z3) we need for JavaScript clients.
+
+Instead, we expect wallet vendors to run their own wallet support services that includes an `mksr_recover` RPC call for their users to use.
+
+:::warning
+`mksr_recover` was initially implemented as part of a Keyspace node, but will be broken out into its own service without the `mksr_` prefix for the RPC call.
+:::
+
+With that service available, the client can fetch the zero-knowledge proof they need to change their key:
+
+```ts twoslash
+import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
+import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./scripts/keyspace/secp256k1/base";
+import { getKeyspaceKey } from "./utils/keyspace";
+import { encodePackedSignature } from "./utils/encodeSignatures/secp256k1";
+import { sign } from "viem/accounts";
+
+export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: Hex, newPrivateKey: Hex) {
+  const dataHash = getDataHashSecp256k1(newPrivateKey);
+  const newKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
+  const newKey254 = toHex(fromHex(newKey, "bigint") >> BigInt(2), { size: 32 });
+  const signature = await sign({ hash: newKey254, privateKey: currentPrivateKey });
+  const signatureData = encodePackedSignature(signature);
+  performSetConfig(keyspaceKey, newKey, "secp256k1", signatureData);
+}
+
+async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" | "webauthn", signatureData: Hex) {
+// ---cut---
+  const recoverResult = await keyspaceClient.getRecoverProof({
+    key,
+    newKey,
+    circuitType,
+    signature: signatureData,
+  });
+// ---cut-after---
+
+  await keyspaceClient.setConfig({
+    key,
+    newKey,
+    ...recoverResult,
+  });
+}
+```
+
+`mksr_recover` returns the proof, current verification key, and the current data in the wallet's Keyspace record.
+
+### Set the New Configuration
+
+With those values, you have everything you need for an `mksr_set` call, which sends your proof to the sequencer and updates the Keyspace state on your behalf.
+
+```ts twoslash
+import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
+import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./scripts/keyspace/secp256k1/base";
+import { getKeyspaceKey } from "./utils/keyspace";
+import { encodePackedSignature } from "./utils/encodeSignatures/secp256k1";
+import { sign } from "viem/accounts";
+
+export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: Hex, newPrivateKey: Hex) {
+  const dataHash = getDataHashSecp256k1(newPrivateKey);
+  const newKey = getKeyspaceKey(vkHashEcdsaAccount, dataHash);
+  const newKey254 = toHex(fromHex(newKey, "bigint") >> BigInt(2), { size: 32 });
+  const signature = await sign({ hash: newKey254, privateKey: currentPrivateKey });
+  const signatureData = encodePackedSignature(signature);
+  performSetConfig(keyspaceKey, newKey, "secp256k1", signatureData);
+}
+
+async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" | "webauthn", signatureData: Hex) {
+  const recoverResult = await keyspaceClient.getRecoverProof({
+    key,
+    newKey,
+    circuitType,
+    signature: signatureData,
+  });
+
+// ---cut---
+  await keyspaceClient.setConfig({
+    key,
+    newKey,
+    ...recoverResult,
+  });
+// ---cut-after---
+}
+```
+
+## Keyspace RPC API
+
+### `mksr_proof`: generate a state proof for a given key
+
+Parameters:
+ - `key`: keystore key
+ - `vkHash`: keccak256(verification key) >> 8
+ - `dataHash`: keccak256(account data) >> 8
+
+Example:
+```shell
+curl -H "Content-Type: application/json" https://sepolia-alpha.key.space \
+  -d '{"id":0,"jsonrpc":"2.0","method":"mksr_proof","params":["0x41f3582833f849b9cbe51c7eb3e86effde1cebf94af99fc752fab6481fb0cfc","0x7d36e133ab7f897fb8f97dec38a69fb083f5cd282717da9a0bc51986cc19b7","0x96b36c7046c67e8165814c3bd34ea0f13e5e731228b362e1efae54980b3107"]}'
+```
+```json
+{"jsonrpc":"2.0","id":0,"result":{"root":"0x18390ea8ab0886dc4f22fb59d9a6d9dea4b08bcc2b0a8cc7d33fcc629a96bf17","proof":"0x18b530c9d3ee3dd18f63c389214dd6184c52f0d04a7ad57344e3866484da9176018be4eddf31baf53ee8114176e951ff25863f9c821bfc320e9f485f9f896f1401cd357010362155c26f1f66b48ba3f68b6bde1bd20c965b36831e465a43f10f0d7064759a612f76bcc3adae92b120a70d86951124382084d95959ce7aa8a9fa21c8205c0e66620819586fda21cf891ef1ce0a431cae624252f855fa6148d94400b7ddf3a66b8916875dded66a115ff1563f9c66b3cc68cb93f0afab9acb57a8228ca9a0a2a22789dee97fb95134807b822bc443712418a369a9eecb0ce06002035250bd849b8542d5ed1a3ac467b9959a21410549dd0c015afdf95c77ffff9306f8fd963b71aadf1fa3456a6863c014f4f2dc338af2ea2d0ff0cb9c643de07b123e67e3ccae365c03bb1410501858e89595e9f618d7dc9b88acde7122630e860609a20533a5fdb8acdb27064eb28c33be26fc57fa888d0421e3c46deccf08d92fd5d642502551b96911886a815abedab9dca15656468c8cdb58c74898d3c1c91c1dc379dc6fa2c23b453894064449206c41c9dce7b77cf84ba2b311890cd4cd0cabad00dfd4d96b5440479ece010b804fc0cdd01bccd7a0308e33f434c294e722ec0a634d83b68a11aef609be4a877f31ed7557ba39363a412fc126a0af989329492f34f1cf465d7a46af852614e22e4ee7cad6926a6cae5d489744b480e44b2a6524c084010be3df090f77950187fff00afdd93dfefa1f7a7a479bfbcab3060d3d11cd27939f79f0f3c6c2934c77ae05544e1b9460c64e2efea80f0be5d35f13bbd8120c395f7dd33f2965edd6fa09c7f06a54153da468aa19679f5b8022951a9d7e8998c01ce9a77e570eff517218803776bddd594a846fcef5c8fe60ccff028fbfd580280d4c0b9b03fdeaec34f7a3157d562fb10fafa7444200b74405582d317cc06cc9eb145d591d94ea5dbb5dd450d5e2126c94cdd54e233231eb2db10b3b7e2b526025c97de8c1d2c4fdbdc5d59138d0ee156f8a6292a882bb3b81190f7b9e6339fa7ee916b73311e8bbeb06b0f20032dbfca219cc3010a341f455282b03c2f5682aa74062911f2f4821f3c65ba3e390f6a58234061732aec43ad3f913b2df2599b7c894e78570fab30893e0047210e537a9d6715f1c3a22b56e9d3a"}}
+```
+
+### `mksr_get`: get the current value for a given key
+
+Parameters:
+ - `key`: keystore key
+
+Example:
+```shell
+curl -H "Content-Type: application/json" https://sepolia-alpha.key.space \
+  -d '{"id":0,"jsonrpc":"2.0","method":"mksr_get","params":["0x48245f681e532926c9435f6aed714e368cea1070ccf9c77352fbb1dc42fe232"]}'
+```
+```json
+{"jsonrpc":"2.0","id":0,"result":"0x48245f681e532926c9435f6aed714e368cea1070ccf9c77352fbb1dc42fe232"}
+```
+
+### `mksr_set`: change the current value for a given key
+
+Parameters:
+ - `key`: keystore key
+ - `newKey`: new keystore key
+ - `currentVk`: verification key
+ - `currentData`: account data
+ - `proof`: state proof
+
+Example:
+```shell
+curl -H "Content-Type: application/json" https://sepolia-alpha.key.space \
+  -d '{"id":0,"jsonrpc":"2.0","method":"mksr_set","params":["0x48245f681e532926c9435f6aed714e368cea1070ccf9c77352fbb1dc42fe232","0x1c882cabbc2303d8a1eb20e62a35b40d5378ecdbc1ed71ed41f659da1d0d4c31","0x...","0x...","0x..."]}'
+```
+```json
+{"jsonrpc":"2.0","id":0,"result":null}
+```

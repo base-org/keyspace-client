@@ -1,0 +1,29 @@
+---
+title: Gas Estimates
+---
+
+# Gas Estimates
+
+## User: Send Transaction
+
+| Scenario                                            | USD Cost     | Execution Gwei | Data Gwei    | Gas Used | Calldata Bytes | Zero Bytes | Source                                                                                                                                                                                                   |
+| --------------------------------------------------- | ------------ | -------------- | ------------ | -------- | -------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deploy Wallet and ???                               | 0.1562184231 | 51598.8        | 0.8390005465 | 515988   | 1828           | 742        | [https://sepolia.basescan.org/tx/0x872f849d65f4c157a7504cc11a3bf0dc14181152fba211b521c1129ba2958560](https://sepolia.basescan.org/tx/0x872f849d65f4c157a7504cc11a3bf0dc14181152fba211b521c1129ba2958560) |
+| Deploy Wallet and Deposit 0 WETH w/ Exclusion Proof | 0.1590017299 | 52518.1        | 0.87760183   | 525,181  | 2020           | 920        | [https://sepolia.basescan.org/tx/0x1a7785d10968afd9aa20844346cc5fff3ca756ebefcb974ed6476761a56405cb](https://sepolia.basescan.org/tx/0x1a7785d10968afd9aa20844346cc5fff3ca756ebefcb974ed6476761a56405cb) |
+| Deposit 0 WETH w/ Exclusion Proof                   | 0.1105856606 | 36526.1        | 0.8348764778 | 365,261  | 1923           | 877        | [https://sepolia.basescan.org/tx/0x8d5c7e55f65673a6c41525354eeee93a4fde79c897e28fbb2a0f0339b6183e7c](https://sepolia.basescan.org/tx/0x8d5c7e55f65673a6c41525354eeee93a4fde79c897e28fbb2a0f0339b6183e7c) |
+| Deposit 0 WETH w/ Inclusion Proof                   | 0.1105711246 | 36521.3        | 0.8335567758 | 365,213  | 1924           | 881        | [https://sepolia.basescan.org/tx/0x3051b1bc15b5ae0a8c717b21140c822107dd4c36aaffef1181e9c59543727e6a](https://sepolia.basescan.org/tx/0x3051b1bc15b5ae0a8c717b21140c822107dd4c36aaffef1181e9c59543727e6a) |
+
+
+## Sequencer: Submit Proof																													
+
+| Scenario          | USD Cost    | Execution Gwei | Data Gwei  | Gas Used | Calldata Bytes |	Zero Bytes   | Source                                                                                                                                                                                                   |
+| ----------------- | ----------- | -------------- | - | -------- | - | - | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prove: 1 recovery | 7.992820161 | 2640064        | 0 | 330,008  | 0 | 0 | [https://sepolia.etherscan.io/tx/0x09daccd2a9e117ad1797405a81b1e470ee7e32bba64f87a1d0e5c6ba94873ac5](https://sepolia.etherscan.io/tx/0x09daccd2a9e117ad1797405a81b1e470ee7e32bba64f87a1d0e5c6ba94873ac5) |
+
+## Sequencer: Sync to L2
+
+| Scenario                                  | USD Cost     | Execution Gwei | Data Gwei   | Gas Used | Calldata Bytes | Zero Bytes | Source                                                                                                                                                                                                   |
+| ----------------------------------------- | ------------ | -------------- | ----------- | -------- | -------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Storage Proof from Block Hash             | 0.1710974421 | 56511.3        | 2.945079976 | 565113   | 5220           | 1009       | test/PulledKeyStore.t.sol                                                                                                                                                                                |
+| Storage Proof from Beacon Root (EIP 4788) | 0.17155735   | 56663.3        | 2.854680389 | 566633   | 5092           | 1021       | test/PulledKeyStore4788.t.sol                                                                                                                                                                            |
+| Deposit From L1 to Base and Optimism      | 3.541242117  | 1169688        | 0           | 146,211  | 0              | 0          | [https://sepolia.etherscan.io/tx/0x7a7ce1abdd73172750a07938a5a0684837f1713bb2e331cceb31d36e4e5e073d](https://sepolia.etherscan.io/tx/0x7a7ce1abdd73172750a07938a5a0684837f1713bb2e331cceb31d36e4e5e073d) |

@@ -1,0 +1,76 @@
+---
+title: Contracts
+---
+
+# Contracts
+
+## Factory
+
+Smart wallet addresses are typically deterministically generated based on their initial configuration. Keyspace wallets continue that practice, but the initial configuration lives in Keyspace instead. Consider `CoinbaseSmartWalletFactory`, which uses the initial owners and a nonce to generate the address. Instead, the owners and nonce will be stored in Keyspace instead, so only the single Keyspace key is needed to generate the address, regardless of how many initial owners there are.
+
+```
+function createAccount(bytes[] calldata owners, uint256 nonce) // [!code --]
+function createAccount(bytes calldata owner) // [!code ++]
+
+    external
+    payable
+    virtual
+    returns (CoinbaseSmartWallet account)
+{
+    if (owners.length == 0) {
+        revert OwnerRequired();
+    }
+
+    (bool alreadyDeployed, address accountAddress) =
+        LibClone.createDeterministicERC1967(msg.value, implementation, _getSalt(owners, nonce)); // [!code --]
+        LibClone.createDeterministicERC1967(msg.value, implementation, _getSalt(owners, nonce)); // [!code ++]
+
+    account = CoinbaseSmartWallet(payable(accountAddress));
+
+    if (!alreadyDeployed) {
+        account.initialize(owners); // [!code --]
+        account.initialize(owner); // [!code ++]
+    }
+}
+```
+
+:::warning
+The current beta version of Keyspace wallets only stores signing keys in Keyspace, but implementation contract addresses will be stored in Keyspace records as well. This will change how factories are implemented.
+:::
+
+## Wallet Contract
+
+To send transactions with a Keyspace-enabled wallet, the client needs to provide a signed `UserOperation`, the current configuration for the wallet stored in Keyspace (e.g. the public key for a single signature wallet), and `stateProof`, a SNARK that proves the wallet configuration in the current state of Keyspace.
+
+:::note
+The proof provided with transactions is not related to the `Account` circuit that contains the authentication logic for the wallet. It's just a state proof of Keyspace's Merkle tree. It is interchangeable with a Merkle proof, but the SNARK costs less gas to verify onchain.
+:::
+
+```solidity
+function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
+internal override virtual returns (uint256 validationData) {
+    (bytes memory signature, uint256 publicKeyX, uint256 publicKeyY, bytes memory stateProof) =
+                        abi.decode(userOp.signature, (bytes, uint256, uint256, bytes));
+
+    bytes32 hash = userOpHash.toEthSignedMessageHash();
+    bytes memory publicKeyBytes = abi.encode(publicKeyX, publicKeyY);
+    address a = address(bytes20(keccak256(publicKeyBytes) << 96));
+    address b = hash.recover(signature);
+    if (a != b)
+        return SIG_VALIDATION_FAILED;
+
+    uint256[] memory data = new uint256[](8);
+    data[0] = publicKeyX;
+    data[1] = publicKeyY;
+
+    uint256[] memory public_inputs = new uint256[](3);
+    public_inputs[0] = key;
+    public_inputs[1] = keyStore.root();
+    public_inputs[2] = uint256(keccak256(abi.encodePacked(data))>>8);
+    require(stateVerifier.Verify(stateProof, public_inputs), "keystore state proof failed");
+
+    return 0;
+}
+```
+
+Note that in addition to a typical `ecrecover`, we need to ensure that the recovered address matches the public key the user has provided with the transaction. We then verify a proof that the same public key is currently consistent with Keyspace's state root.
