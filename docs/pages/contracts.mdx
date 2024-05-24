@@ -23,7 +23,7 @@ function createAccount(bytes calldata owner) // [!code ++]
 
     (bool alreadyDeployed, address accountAddress) =
         LibClone.createDeterministicERC1967(msg.value, implementation, _getSalt(owners, nonce)); // [!code --]
-        LibClone.createDeterministicERC1967(msg.value, implementation, _getSalt(owners, nonce)); // [!code ++]
+        LibClone.createDeterministicERC1967(msg.value, implementation, _getSalt(owner)); // [!code ++]
 
     account = CoinbaseSmartWallet(payable(accountAddress));
 
