@@ -80,5 +80,9 @@ export default defineConfig({
       text: 'Original Specification',
       link: '/original-spec',
     },
+    {
+      text: 'References',
+      link: '/references',
+    },
   ],
 });
