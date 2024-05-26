@@ -17,6 +17,8 @@ Instead, both the wallet implementation and the authorized keys must be configur
 
 ### M-of-N Multisignature Circuit
 
+Keyspace currently ships with two circuits: one for secp256k1 signatures (Ethereum EOA signatures) and one for WebAuthn signatures. Implementing an M-of-N multisignature circuit will support 1-of-N use cases for most personal smart wallets as well as typical multisignature wallets.
+
 ### Time-Delayed Recoveries
 
 Keyspace supports first-party key changes out of the box, but what if you actually lost your key? It'd be nice to be able to give recovery authorization to another party who could trigger a key change on your behalf. To minimize the trust required for this recovery agent, it'd be nice to be able to override the recovery request before a time window has elapsed.
@@ -48,4 +50,4 @@ Aggregators in ERC 4337 were designed to allow BLS signatures to be aggregated, 
 
 ### Make Keyspace an L3
 
-[Vitalik's thoughts on aggregated proving for ZK rollups](https://vitalik.eth.limo/general/2022/09/17/layer_3.html#rollups-and-validiums-have-a-confirmation-time-vs-fixed-cost-tradeoff.-layer-3s-can-help-fix-this.-but-what-else-can)
+It costs 330,000 gas for the sequencer to verify proofs on L1, which makes the expected cost per key change fairly high. It would be cheaper to settle on a [minimal L2](https://vitalik.eth.limo/general/2022/09/17/layer_3.html#rollups-and-validiums-have-a-confirmation-time-vs-fixed-cost-tradeoff.-layer-3s-can-help-fix-this.-but-what-else-can) designed just for ZK systems to aggregate their proofs and update their state on L1.
