@@ -4,14 +4,24 @@ title: Rollup Sequencing
 
 # Rollup Sequencing
 
+Keyspace is a rollup, which means state changes are calculated off chain based on the sequenced transaction data posted on L1. Sequencing transactions has a significant impact on the experience of using Keyspace and its resilience in adversarial or unpredicted scenarios.
+
+Keyspace is a particularly special case of a rollup because it lacks *pre-confirmations* of transactions that make the user experience of general-purpose L2s so attractive: transactions can build on top of modified state that hasn't yet settled to L1 because users trust the L2 sequencer to not violate its pre-confirmations. This only works for activity within a single L2, but the Keyspace state is almost entirely used in a cross-chain context.
+
+As a result, the time it takes for a sequencer to generate a valid proof of a Keyspace state transition directly affects the delay between requesting a key change and actually being able to use the new key on the networks the user cares about.
+
 ## Based Sequencing
+
+While early releases of Keyspace will likely be sequenced by selected participants on an allowlist, a design goal for Keyspace is to be a [based rollup](https://ethresear.ch/t/based-rollups-superpowers-from-l1-sequencing/15016). Based rollups reuse the decentralized set of L1 validators to sequence their own transactions. That means L1 validators opt into sequencing the rollup on top of their obligations from validating the L1.
+
+Based rollups inherit several advantages from the L1. For our purposes, decentralization, liveness, and Ethereum-alignment are critical.
+
+[Vanilla-based rollups](https://hackmd.io/@Perseverance/rkhnAbi06) are currently the most promising based rollup design for Keyspace. In this type of based rollup, the current L1 validator sequences the L2 rollup if they've already opted-in to be an L2 sequencer. If not, a random opted-in L1 validator is selected to sequence the L2 rollup. This approach makes it easier to deploy a rollup with a single sequencer, then transition to a permissionless sequencer set over time.
 
 ## Proving
 
-### TxHash Circuit
-
-### Recurse Circuit
-
-### Onchain Circuit
+To advance Keyspace's state root, the sequencer needs to generate a recursive proof of the state transition. This proof is a zk-SNARK that demonstrates the state transition is valid according to the rules of the Keyspace protocol. The proof is submitted to the L1 KeyStore contract, which verifies the proof and updates the state root. It currently takes 5-10 minutes to generate this proof, which makes coordinating multiple sequencers to generate proofs more challenging.
 
 ## Forced Inclusion
+
+Keyspace has a forced inclusion mechanism that allows clients to submit their key recovery proof directly to L1. The sequencer is then forced to include their transaction in an upcoming batch. This mechanism is critical for ensuring that users can recover their keys in a timely manner, even if the sequencer is unresponsive or adversarial.
