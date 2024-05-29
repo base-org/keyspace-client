@@ -6,7 +6,7 @@ import { entryPointAddress } from "../../../generated";
 import { encodeSignatureWrapper } from "../../../utils/encodeSignatures/webAuthn";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
-import { serializePublicKeyFromPoint, getKeyspaceKey, getKeyspaceConfigProof } from "../../../utils/keyspace";
+import { serializePublicKeyFromPoint, getKeyspaceKey, getKeyspaceConfigProof, getAccount } from "../../../utils/keyspace";
 import { p256WebAuthnSign } from "../../../utils/sign";
 import { getDataHash } from "../../../utils/encodeSignatures/utils";
 
@@ -56,16 +56,8 @@ export function getKeyspaceKeyForPrivateKey(privateKey: ECDSA): Hex {
   return getKeyspaceKey(vkHashWebAuthnAccount, dataHash);
 }
 
-export async function getAccount(keyspaceKey: Hex): Promise<Address> {
-  const owners = [{
-    ksKeyType: 2,
-    ksKey: fromHex(keyspaceKey, "bigint"),
-  }];
-  return await getAccountAddress(client as any, { owners, nonce: 0n });
-}
-
 export async function makeCalls(keyspaceKey: Hex, privateKey: ECDSA, calls: Call[], paymasterData = "0x" as Hex) {
-  const account = await getAccount(keyspaceKey);
+  const account = await getAccount(keyspaceKey, 0n, "webauthn");
   const op = await buildUserOp(client, {
     account,
     signers: [{

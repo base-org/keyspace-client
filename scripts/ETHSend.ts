@@ -4,6 +4,7 @@ import { Call } from "../utils/smartWallet";
 import * as webAuthnBase from "./base";
 import * as keyspaceSecp256k1Base from "./keyspace/secp256k1/base";
 import * as keyspaceWebAuthnBase from "./keyspace/webAuthn/base";
+import { getAccount } from "../utils/keyspace";
 const ECDSA = require("ecdsa-secp256r1");
 
 async function main() {
@@ -39,7 +40,7 @@ async function main() {
     console.error("Invalid circuit type");
   }
 
-  const to = await baseModule.getAccount(args.keyspace_key);
+  const to = await getAccount(args.keyspace_key, 0n, args.signature_type);
   const amount = 1n;
   const calls: Call[] = [{
     index: 0,

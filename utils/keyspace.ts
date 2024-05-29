@@ -2,10 +2,13 @@ import {
   type Hex,
   fromHex,
   toHex,
+  Address,
 } from "viem";
 import { poseidonPerm } from "@zk-kit/poseidon-cipher";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { GetConfigProofReturnType, KeyspaceClient } from "../keyspace-viem/actions/types";
+import { client } from "../scripts/keyspace/secp256k1/base";
+import { getAccountAddress } from "./smartWallet";
 
 /**
  * Generate the poseidon hash of the inputs provided
@@ -70,5 +73,13 @@ export async function getKeyspaceConfigProof(client: KeyspaceClient, keyspaceKey
   });
   console.log(keyspaceProof);
   return keyspaceProof;
+}
+
+export async function getAccount(keyspaceKey: Hex, nonce: bigint, signatureType: "secp256k1" | "webauthn"): Promise<Address> {
+  const owners = [{
+    ksKeyType: signatureType === "secp256k1" ? 1 : 2,
+    ksKey: fromHex(keyspaceKey, "bigint"),
+  }];
+  return await getAccountAddress(client as any, { owners, nonce });
 }
 

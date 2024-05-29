@@ -1,14 +1,15 @@
 import { bundlerActions, BundlerClient } from "permissionless";
-import { Address, Client, createPublicClient, fromHex, Hex, http, HttpTransportConfig } from "viem";
+import { Client, createPublicClient, fromHex, Hex, http, HttpTransportConfig } from "viem";
 import { sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../../../generated";
-import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
+import { buildUserOp, Call, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
 import { getKeyspaceConfigProof, getKeyspaceKey, serializePublicKeyFromBytes, serializePublicKeyFromPrivateKey } from "../../../utils/keyspace";
 import { encodeSignatureWrapper } from "../../../utils/encodeSignatures/secp256k1";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { getDataHash } from "../../../utils/encodeSignatures/utils";
+import { getAccount } from "../../../utils/keyspace";
 
 const chain = baseSepolia;
 
@@ -55,16 +56,8 @@ export function getKeyspaceKeyForPrivateKey(privateKey: Hex): Hex {
   return getKeyspaceKey(vkHashEcdsaAccount, dataHash);
 }
 
-export async function getAccount(keyspaceKey: Hex): Promise<Address> {
-  const owners = [{
-    ksKeyType: 1,
-    ksKey: fromHex(keyspaceKey, "bigint"),
-  }];
-  return await getAccountAddress(client as any, { owners, nonce: 0n });
-}
-
 export async function makeCalls(keyspaceKey: Hex, privateKey: Hex, calls: Call[], paymasterData = "0x" as Hex) {
-  const account = await getAccount(keyspaceKey);
+  const account = await getAccount(keyspaceKey, 0n, "secp256k1");
   const op = await buildUserOp(client, {
     account,
     signers: [{ ksKey: fromHex(keyspaceKey, "bigint"), ksKeyType: 1 }],

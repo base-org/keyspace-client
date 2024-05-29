@@ -2,11 +2,12 @@ import { ArgumentParser } from "argparse";
 import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeySecp256k1 } from "./secp256k1/base";
 import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeyWebAuthn } from "./webAuthn/base";
 import { defaultToEnv } from "../../utils/argparse";
+import { getAccount } from "../../utils/keyspace";
 
 
 async function main() {
   const parser = new ArgumentParser({
-    description: "Get the account address for a given private key",
+    description: "Get the keyspace key and account address for a given private key",
   });
 
   parser.add_argument("--private-key", {
@@ -27,7 +28,8 @@ async function main() {
   } else {
     console.error("Invalid circuit type");
   }
-  console.log(keyspaceKey);
+  console.log("Keyspace key:", keyspaceKey);
+  console.log("Account address:", await getAccount(keyspaceKey as `0x${string}`, 0n, args.signature_type));
 }
 
 if (import.meta.main) {
