@@ -56,12 +56,14 @@ export async function buildUserOp(
     callData,
     paymasterAndData,
     signature,
-    preVerificationGas: 1_000_000n,
+    preVerificationGas: 5_000_000n,
     verificationGasLimit: 1_000_000n,
     callGasLimit: 1_000_000n,
     ...maxFeesPerGas,
   };
 
+  // NOTE: The gas limits provided in the user operation seem to override any
+  // estimated limits, which makes this estimate redundant.
   const gasLimits = await estimateUserOperationGas(client, {
     userOperation: op,
     entryPoint: entryPointAddress,
