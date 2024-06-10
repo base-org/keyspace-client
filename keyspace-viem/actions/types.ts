@@ -1,6 +1,7 @@
 import { Chain, Client, Hash, Hex, PublicActions, PublicRpcSchema, RpcSchema, Transport } from "viem";
 import { Prettify } from "viem/chains";
 import { KeyspaceActions } from "../decorators/keyspace";
+import { RecoveryServiceActions } from "../decorators/recoveryService";
 
 export type GetConfigProofParameters = {
   key: Hex;
@@ -8,7 +9,7 @@ export type GetConfigProofParameters = {
   dataHash: Hash;
 };
 
-export type GetRecoverProofParameters = {
+export type GetSignatureProofParameters = {
   key: Hex;
   newKey: Hex;
   circuitType: "secp256k1" | "webauthn";
@@ -28,7 +29,7 @@ export type GetConfigProofReturnType = {
   proof: Hex;
 };
 
-export type GetRecoverProofReturnType = {
+export type GetSignatureProofReturnType = {
   proof: Hex;
   currentVk: Hex;
   currentData: Hex;
@@ -38,10 +39,6 @@ export type MKSRRpcSchema = RpcSchema & [{
   Method: "mksr_proof";
   Parameters: [Hex, Hash, Hash];
   ReturnType: GetConfigProofReturnType;
-}, {
-  Method: "mksr_recover";
-  Parameters: [Hex, Hex, Hex, string];
-  ReturnType: GetRecoverProofReturnType;
 }, {
   Method: "mksr_set";
   Parameters: [Hex, Hex, Hex, Hex, Hex];
@@ -58,5 +55,24 @@ export type KeyspaceClient<
     undefined,
     PublicRpcSchema & MKSRRpcSchema,
     PublicActions<transport, chain> & KeyspaceActions
+  >
+>;
+
+export type RecoveryServiceRPCSchema = RpcSchema & [{
+  Method: "recover_proveSignature";
+  Parameters: [Hex, Hex, Hex, string];
+  ReturnType: GetSignatureProofReturnType;
+}];
+
+export type RecoveryServiceClient<
+transport extends Transport = Transport,
+chain extends Chain | undefined = Chain | undefined,
+> = Prettify<
+  Client<
+    transport,
+    chain,
+    undefined,
+    PublicRpcSchema & RecoveryServiceRPCSchema,
+    PublicActions<transport, chain> & RecoveryServiceActions
   >
 >;

@@ -1,5 +1,5 @@
 import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
-import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./secp256k1/base";
+import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient, recoveryClient } from "./secp256k1/base";
 import { getKeyspaceKey } from "../../utils/keyspace";
 import { vkHashWebAuthnAccount } from "../keyspace/webAuthn/base";
 import { ECDSA, encodePackedSignature } from "../../utils/encodeSignatures/secp256k1";
@@ -50,14 +50,14 @@ export async function changeOwnerWebAuthn(keyspaceKey: Hex, currentPrivateKey: E
 }
 
 async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" | "webauthn", signatureData: Hex) {
-  const recoverResult = await keyspaceClient.getRecoverProof({
+  const recoverResult = await recoveryClient.getSignatureProof({
     key,
     newKey,
     circuitType,
     signature: signatureData,
   });
 
-  console.log("mksr_recover succeeded", recoverResult);
+  console.log("recovery_signatureProof succeeded", recoverResult);
   const fullHash = keccak256(recoverResult.currentVk, "bytes");
   const truncatedHash = fullHash.slice(0, 31);
   const vkHash = toHex(truncatedHash);

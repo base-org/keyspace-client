@@ -10,6 +10,7 @@ import { encodeSignatureWrapper } from "../../../utils/encodeSignatures/secp256k
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { getDataHash } from "../../../utils/encodeSignatures/utils";
 import { getAccount } from "../../../utils/keyspace";
+import { recoveryServiceActions } from "../../../keyspace-viem/decorators/recoveryService";
 
 const chain = baseSepolia;
 
@@ -41,6 +42,14 @@ export const keyspaceClient = createPublicClient({
     keyspaceClientConfig,
   ),
 }).extend(keyspaceActions());
+
+export const recoveryClient = createPublicClient({
+  chain,
+  transport: http(
+    process.env.RECOVERY_RPC_URL || "http://localhost:8555",
+    keyspaceClientConfig,
+  ),
+}).extend(recoveryServiceActions());
 
 // This verification key is not production-ready because it uses a locally
 // generated KZG commitment instead of one with a trusted setup.
