@@ -15,7 +15,9 @@ We expect L2s to sync to Keyspace's state root using Merkle proofs of the L1 Key
 Rollups typically implement a block hash oracle to verify the state root of the L1 chain. The oracle can be used to verify the state root of the L1 KeyStore contract, which can then be used to verify the state root of the L2 KeyStore contract.
 
 :::note
-Since the L1 block hash changes frequently, it can be difficult to generate a proof and submit it onchain before the L1 block hash changes. Instead, syncing can be implemented as a two step process where the current block hash is read from the oracle and stored in the L2 KeyStore contract. That gives you a fixed block hash to generate proofs from where the expiry time is under your control instead of the L2's rollup protocol.
+Since the L1 block hash changes frequently, it can be difficult to generate a proof and submit it onchain before the L1 block hash changes. Instead, syncing via block hash proofs has been implemented as a two step process where the current block hash is read from the oracle and stored in the L2 KeyStore contract. That gives a fixed block hash to generate proofs from where the expiry time is under your control instead of the L2's rollup protocol.
+
+In practice, the L1 block hash on OP Stack rollups seems to take 5-6 minutes to catch up after an L1 block has been validated. This yields a total key change latency of 10-15 minutes.
 :::
 
 ```solidity
