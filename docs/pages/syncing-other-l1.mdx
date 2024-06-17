@@ -14,11 +14,9 @@ As Vitalik mentions in [one of his keystore rollup design posts](https://vitalik
 
 While this comment was in the context of reading L1 state from an L2, the same principle applies to reading Ethereum state from other L1s. If the oracle is compromised, the security of the entire system is at risk.
 
-### Wormhole
+### Proof-of-Concept
 
-### Chainlink
-
-### Hashi
+Keyspace's Testnet Beta includes a proof-of-concept that syncs to the testnets of other L1s using Wormhole as an oracle. For future releases, we intend to rely on Ethereum block hash data from multiple oracles using [Hashi](https://github.com/gnosis/hashi/) or a similar approach that requires multiple oracles to agree with each other.
 
 ## Re-Sequencing on Other L1s
 
