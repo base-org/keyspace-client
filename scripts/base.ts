@@ -3,7 +3,7 @@ import { Address, createPublicClient, encodeAbiParameters, Hex, http } from "vie
 import { baseSepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
 import { entryPointAddress } from "../generated";
-import { encodeSignatureWrapper } from "../utils/encodeSignatures/webAuthn";
+import { encodeSignature } from "../utils/encodeSignatures/webAuthn";
 import { p256WebAuthnSign } from "../utils/sign";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
 
@@ -45,7 +45,7 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
     p256PrivateKey,
   });
 
-  const signatureWrapper = encodeSignatureWrapper({
+  const signatureWrapper = encodeSignature({
     ownerIndex: 0n,
     authenticatorData,
     clientDataJSON,

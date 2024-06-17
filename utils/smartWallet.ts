@@ -1,29 +1,26 @@
-import { estimateUserOperationGas, UserOperation } from "permissionless";
-import { Address, Chain, Client, encodeAbiParameters, encodeFunctionData, fromHex, Hex, keccak256, PublicClient, toHex, Transport } from "viem";
+import { estimateUserOperationGas, getRequiredPrefund, UserOperation } from "permissionless";
+import { Address, Chain, encodeAbiParameters, encodeFunctionData, fromHex, Hex, keccak256, PublicClient, toHex, Transport, UserRejectedRequestError } from "viem";
 import { estimateFeesPerGas, getBytecode, readContract } from "viem/actions";
 import { accountAbi, accountFactoryAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../generated";
 import { buildDummySignature as buildDummySecp256k1 } from "./encodeSignatures/secp256k1";
 import { buildDummySignature as buildDummyWebAuthn } from "./encodeSignatures/webAuthn";
 
-export interface KeyAndType {
-  ksKey: bigint;
-  ksKeyType: number;
-}
-
 export const PASSKEY_OWNER_DUMMY_SIGNATURE: Hex =
   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000170000000000000000000000000000000000000000000000000000000000000001949fc7c88032b9fcb5f6efc7a7b8c63668eae9871b765e23123bb473ff57aa831a7c0d9276168ebcc29f2875a0239cffdf2a9cd1c2007c5c77c071db9264df1d000000000000000000000000000000000000000000000000000000000000002549960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008a7b2274797065223a22776562617574686e2e676574222c226368616c6c656e6765223a2273496a396e6164474850596759334b7156384f7a4a666c726275504b474f716d59576f4d57516869467773222c226f726967696e223a2268747470733a2f2f7369676e2e636f696e626173652e636f6d222c2263726f73734f726967696e223a66616c73657d00000000000000000000000000000000000000000000";
 
 export async function buildUserOp(
-  client: Client,
+  client: PublicClient,
   {
     account,
-    signers,
+    ksKey,
+    ksKeyType,
     calls,
     paymasterAndData = "0x",
     signatureType,
   }: {
     account: Address;
-    signers: KeyAndType[];
+    ksKey: Hex;
+    ksKeyType: number;
     calls: Call[];
     paymasterAndData: Hex;
     signatureType: "secp256k1" | "webauthn";
@@ -33,8 +30,9 @@ export async function buildUserOp(
   const code = await getBytecode(client, { address: account });
   if (!code) {
     initCode = getInitCode({
-      owners: signers,
-      index: 0n,
+      ksKey,
+      ksKeyType,
+      nonce: 0n,
     });
   }
   const callData = buildUserOperationCalldata({ calls });
@@ -47,7 +45,7 @@ export async function buildUserOp(
   let maxFeesPerGas = await estimateFeesPerGas(client);
 
   const dummySigFunc = signatureType === "secp256k1" ? buildDummySecp256k1 : buildDummyWebAuthn;
-  const signature = dummySigFunc({ keyspaceKey: toHex(signers[0].ksKey) });
+  const signature = dummySigFunc();
 
   const op = {
     sender: account,
@@ -62,6 +60,16 @@ export async function buildUserOp(
     ...maxFeesPerGas,
   };
 
+  const requiredPrefund = getRequiredPrefund({
+    userOperation: op,
+  });
+  const senderBalance = await client.getBalance({
+    address: account,
+  });
+  if (senderBalance < requiredPrefund) {
+    throw new Error(`Sender address does not have enough native tokens`)
+  }
+
   // NOTE: The gas limits provided in the user operation seem to override any
   // estimated limits, which makes this estimate redundant.
   const gasLimits = await estimateUserOperationGas(client, {
@@ -75,38 +83,41 @@ export async function buildUserOp(
   };
 }
 
-export function getInitCode({ owners, index }: { owners: KeyAndType[]; index: bigint }): Hex {
+export function getInitCode({ ksKey, ksKeyType, nonce }: { ksKey: Hex; ksKeyType: number; nonce: bigint }): Hex {
   return `${accountFactoryAddress}${
     createAccountCalldata({
-      owners,
-      nonce: index,
+      ksKey,
+      ksKeyType,
+      nonce,
     }).slice(2)
   }`;
 }
 
 export function createAccountCalldata({
-  owners,
+  ksKey,
+  ksKeyType,
   nonce,
 }: {
-  owners: KeyAndType[];
+  ksKey: Hex;
+  ksKeyType: number;
   nonce: bigint;
 }) {
   return encodeFunctionData({
     abi: accountFactoryAbi,
     functionName: "createAccount",
-    args: [owners, nonce],
+    args: [fromHex(ksKey, "bigint"), ksKeyType, nonce],
   });
 }
 
 export async function getAccountAddress<TChain extends Chain | undefined>(
   client: PublicClient<Transport, TChain>,
-  { owners, nonce }: { owners: KeyAndType[]; nonce: bigint },
+  { ksKey, ksKeyType, nonce }: { ksKey: Hex; ksKeyType: number; nonce: bigint },
 ) {
   return await readContract(client, {
     abi: accountFactoryAbi,
     address: accountFactoryAddress,
     functionName: "getAddress",
-    args: [owners as Readonly<KeyAndType>[], nonce],
+    args: [fromHex(ksKey, "bigint"), ksKeyType, nonce],
   });
 }
 

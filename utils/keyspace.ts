@@ -75,11 +75,8 @@ export async function getKeyspaceConfigProof(client: KeyspaceClient, keyspaceKey
   return keyspaceProof;
 }
 
-export async function getAccount(keyspaceKey: Hex, nonce: bigint, signatureType: "secp256k1" | "webauthn"): Promise<Address> {
-  const owners = [{
-    ksKeyType: signatureType === "secp256k1" ? 1 : 2,
-    ksKey: fromHex(keyspaceKey, "bigint"),
-  }];
-  return await getAccountAddress(client as any, { owners, nonce });
+export async function getAccount(ksKey: Hex, nonce: bigint, signatureType: "secp256k1" | "webauthn"): Promise<Address> {
+  const ksKeyType = signatureType === "secp256k1" ? 1 : 2;
+  return await getAccountAddress(client as any, { ksKey, ksKeyType, nonce });
 }
 

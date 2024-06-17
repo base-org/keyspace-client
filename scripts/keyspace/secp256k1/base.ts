@@ -1,12 +1,12 @@
 import { bundlerActions, BundlerClient } from "permissionless";
-import { Client, createPublicClient, fromHex, Hex, http, HttpTransportConfig } from "viem";
+import { createPublicClient, Hex, http, HttpTransportConfig, PublicClient } from "viem";
 import { sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../../../generated";
 import { buildUserOp, Call, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
 import { getKeyspaceConfigProof, getKeyspaceKey, serializePublicKeyFromBytes, serializePublicKeyFromPrivateKey } from "../../../utils/keyspace";
-import { encodeSignatureWrapper } from "../../../utils/encodeSignatures/secp256k1";
+import { encodeSignature } from "../../../utils/encodeSignatures/secp256k1";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { getDataHash } from "../../../utils/encodeSignatures/utils";
 import { getAccount } from "../../../utils/keyspace";
@@ -14,7 +14,7 @@ import { recoveryServiceActions } from "../../../keyspace-viem/decorators/recove
 
 const chain = baseSepolia;
 
-export const client: Client = createPublicClient({
+export const client: PublicClient = createPublicClient({
   chain,
   transport: http(
     process.env.RPC_URL || "",
@@ -69,7 +69,8 @@ export async function makeCalls(keyspaceKey: Hex, privateKey: Hex, calls: Call[]
   const account = await getAccount(keyspaceKey, 0n, "secp256k1");
   const op = await buildUserOp(client, {
     account,
-    signers: [{ ksKey: fromHex(keyspaceKey, "bigint"), ksKeyType: 1 }],
+    ksKey: keyspaceKey,
+    ksKeyType: 1,
     calls,
     paymasterAndData: paymasterData,
     signatureType: "secp256k1",
@@ -97,10 +98,8 @@ export async function signAndWrap(
   const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
   const pk256 = serializePublicKeyFromBytes(publicKey);
   const dataHash = getDataHash(pk256);
-  const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashEcdsaAccount, dataHash);
-  return encodeSignatureWrapper({
+  const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashEcdsaAccount, dataHash);  return encodeSignature({
     signature,
-    keyspaceKey,
     publicKey,
     configProof: configProof.proof,
   });

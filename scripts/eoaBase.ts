@@ -4,7 +4,7 @@ import { privateKeyToAccount, sign } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { entryPointAddress } from "../generated";
 import { buildReplayableUserOp, getUserOpHashWithoutChainId } from "../utils/replayable";
-import { encodeSignatureWrapper } from "../utils/encodeSignatures/secp256k1";
+import { encodeSignature } from "../utils/encodeSignatures/secp256k1";
 import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../utils/smartWallet";
 
 const chain = baseSepolia;
@@ -38,7 +38,7 @@ export async function makeCalls(calls: Call[], paymasterData = "0x" as Hex) {
 
   const signature = await sign({ hash, privateKey: process.env.PRIVATE_KEY as Hex });
 
-  const signatureWrapper = encodeSignatureWrapper({
+  const signatureWrapper = encodeSignature({
     signature,
     ownerIndex: 0n,
   });
@@ -66,7 +66,7 @@ export async function makeReplayableCalls(calls: Hex[], paymasterData = "0x" as 
 
   const signature = await sign({ hash, privateKey: process.env.PRIVATE_KEY as Hex });
 
-  const signatureWrapper = encodeSignatureWrapper({
+  const signatureWrapper = encodeSignature({
     signature,
     ownerIndex: 0n,
   });

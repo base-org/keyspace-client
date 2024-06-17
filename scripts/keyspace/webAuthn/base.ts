@@ -1,10 +1,10 @@
 import { bundlerActions, BundlerClient } from "permissionless";
-import { Address, createPublicClient, Hex, http, fromHex, Client } from "viem";
+import { createPublicClient, Hex, http, PublicClient } from "viem";
 import { baseSepolia } from "viem/chains";
 const ECDSA = require("ecdsa-secp256r1");
 import { entryPointAddress } from "../../../generated";
-import { encodeSignatureWrapper } from "../../../utils/encodeSignatures/webAuthn";
-import { buildUserOp, Call, getAccountAddress, getUserOpHash } from "../../../utils/smartWallet";
+import { encodeSignature } from "../../../utils/encodeSignatures/webAuthn";
+import { buildUserOp, Call, getUserOpHash } from "../../../utils/smartWallet";
 import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
 import { serializePublicKeyFromPoint, getKeyspaceKey, getKeyspaceConfigProof, getAccount } from "../../../utils/keyspace";
 import { p256WebAuthnSign } from "../../../utils/sign";
@@ -18,7 +18,7 @@ type ECDSA = {
 
 const chain = baseSepolia;
 
-export const client: Client = createPublicClient({
+export const client: PublicClient = createPublicClient({
   chain,
   transport: http(
     process.env.RPC_URL || "",
@@ -60,10 +60,8 @@ export async function makeCalls(keyspaceKey: Hex, privateKey: ECDSA, calls: Call
   const account = await getAccount(keyspaceKey, 0n, "webauthn");
   const op = await buildUserOp(client, {
     account,
-    signers: [{
-      ksKeyType: 2,
-      ksKey: fromHex(keyspaceKey, "bigint"),
-    }],
+    ksKey: keyspaceKey,
+    ksKeyType: 2,
     calls,
     paymasterAndData: paymasterData,
     signatureType: "webauthn",
@@ -91,9 +89,8 @@ export async function signAndWrap(
   const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
   const dataHash = getDataHash(pk256);
   const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashWebAuthnAccount, dataHash);
-  return encodeSignatureWrapper({
+  return encodeSignature({
     signature,
-    keyspaceKey,
     publicKey: {
       x: privateKey.x,
       y: privateKey.y,

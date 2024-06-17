@@ -3,32 +3,49 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export const accountAbi = [
-  { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'keyStore_', internalType: 'address', type: 'address' },
+      { name: 'stateVerifier_', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'error', inputs: [], name: 'Initialized' },
+  {
+    type: 'error',
+    inputs: [{ name: 'key', internalType: 'uint256', type: 'uint256' }],
+    name: 'InvalidNonceKey',
+  },
+  { type: 'error', inputs: [], name: 'KeyspaceKeyTypeCantBeNone' },
+  {
+    type: 'error',
+    inputs: [{ name: 'selector', internalType: 'bytes4', type: 'bytes4' }],
+    name: 'SelectorNotAllowed',
+  },
+  { type: 'error', inputs: [], name: 'Unauthorized' },
+  { type: 'error', inputs: [], name: 'UnauthorizedCallContext' },
+  { type: 'error', inputs: [], name: 'UpgradeFailed' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
   { type: 'fallback', stateMutability: 'payable' },
-  { type: 'receive', stateMutability: 'payable' },
   {
     type: 'function',
     inputs: [],
     name: 'REPLAYABLE_NONCE_KEY',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
-    name: 'addOwnerAddress',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'x', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'y', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'addOwnerPublicKey',
-    outputs: [],
-    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -151,34 +168,17 @@ export const accountAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'owners', internalType: 'bytes[]', type: 'bytes[]' }],
+    inputs: [
+      { name: 'ksKey', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'ksKeyType',
+        internalType: 'enum CoinbaseSmartWallet.KeyspaceKeyType',
+        type: 'uint8',
+      },
+    ],
     name: 'initialize',
     outputs: [],
     stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
-    name: 'isOwnerAddress',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'account', internalType: 'bytes', type: 'bytes' }],
-    name: 'isOwnerBytes',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'x', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'y', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'isOwnerPublicKey',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -193,22 +193,10 @@ export const accountAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'nextOwnerIndex',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'index', internalType: 'uint256', type: 'uint256' }],
-    name: 'ownerAtIndex',
-    outputs: [{ name: '', internalType: 'bytes', type: 'bytes' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'ownerCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'keyStore',
+    outputs: [
+      { name: '', internalType: 'contract IKeyStore', type: 'address' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -220,36 +208,18 @@ export const accountAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: 'index', internalType: 'uint256', type: 'uint256' },
-      { name: 'owner', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'removeLastOwner',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'index', internalType: 'uint256', type: 'uint256' },
-      { name: 'owner', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'removeOwnerAtIndex',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'removedOwnersCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    inputs: [{ name: 'hash', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'replaySafeHash',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    inputs: [{ name: 'hash', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'replaySafeHash',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    inputs: [],
+    name: 'stateVerifier',
+    outputs: [
+      { name: '', internalType: 'contract IVerifier', type: 'address' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -304,98 +274,7 @@ export const accountAbi = [
     ],
     stateMutability: 'nonpayable',
   },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'index',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      { name: 'owner', internalType: 'bytes', type: 'bytes', indexed: false },
-    ],
-    name: 'AddOwner',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'index',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: true,
-      },
-      { name: 'owner', internalType: 'bytes', type: 'bytes', indexed: false },
-    ],
-    name: 'RemoveOwner',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'implementation',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'Upgraded',
-  },
-  {
-    type: 'error',
-    inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
-    name: 'AlreadyOwner',
-  },
-  { type: 'error', inputs: [], name: 'Initialized' },
-  {
-    type: 'error',
-    inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
-    name: 'InvalidEthereumAddressOwner',
-  },
-  {
-    type: 'error',
-    inputs: [{ name: 'key', internalType: 'uint256', type: 'uint256' }],
-    name: 'InvalidNonceKey',
-  },
-  {
-    type: 'error',
-    inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
-    name: 'InvalidOwnerBytesLength',
-  },
-  { type: 'error', inputs: [], name: 'LastOwner' },
-  {
-    type: 'error',
-    inputs: [{ name: 'index', internalType: 'uint256', type: 'uint256' }],
-    name: 'NoOwnerAtIndex',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'ownersRemaining', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'NotLastOwner',
-  },
-  {
-    type: 'error',
-    inputs: [{ name: 'selector', internalType: 'bytes4', type: 'bytes4' }],
-    name: 'SelectorNotAllowed',
-  },
-  { type: 'error', inputs: [], name: 'Unauthorized' },
-  { type: 'error', inputs: [], name: 'UnauthorizedCallContext' },
-  { type: 'error', inputs: [], name: 'UpgradeFailed' },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'index', internalType: 'uint256', type: 'uint256' },
-      { name: 'expectedOwner', internalType: 'bytes', type: 'bytes' },
-      { name: 'actualOwner', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'WrongOwnerAtIndex',
-  },
+  { type: 'receive', stateMutability: 'payable' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -410,21 +289,15 @@ export const accountFactoryAbi = [
     ],
     stateMutability: 'payable',
   },
+  { type: 'error', inputs: [], name: 'KeyRequired' },
   {
     type: 'function',
     inputs: [
+      { name: 'ksKey', internalType: 'uint256', type: 'uint256' },
       {
-        name: 'ksKeyAndTypes',
-        internalType: 'struct MultiOwnable.KeyAndType[]',
-        type: 'tuple[]',
-        components: [
-          { name: 'ksKey', internalType: 'uint256', type: 'uint256' },
-          {
-            name: 'ksKeyType',
-            internalType: 'enum MultiOwnable.KeyspaceKeyType',
-            type: 'uint8',
-          },
-        ],
+        name: 'ksKeyType',
+        internalType: 'enum CoinbaseSmartWallet.KeyspaceKeyType',
+        type: 'uint8',
       },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
     ],
@@ -441,18 +314,11 @@ export const accountFactoryAbi = [
   {
     type: 'function',
     inputs: [
+      { name: 'ksKey', internalType: 'uint256', type: 'uint256' },
       {
-        name: 'ksKeyAndTypes',
-        internalType: 'struct MultiOwnable.KeyAndType[]',
-        type: 'tuple[]',
-        components: [
-          { name: 'ksKey', internalType: 'uint256', type: 'uint256' },
-          {
-            name: 'ksKeyType',
-            internalType: 'enum MultiOwnable.KeyspaceKeyType',
-            type: 'uint8',
-          },
-        ],
+        name: 'ksKeyType',
+        internalType: 'enum CoinbaseSmartWallet.KeyspaceKeyType',
+        type: 'uint8',
       },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
     ],
@@ -474,11 +340,10 @@ export const accountFactoryAbi = [
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
   },
-  { type: 'error', inputs: [], name: 'KeyRequired' },
 ] as const
 
 export const accountFactoryAddress =
-  '0x0BA5ED08ce9d8D797e51F22B697AA02648feF8B1' as const
+  '0x0BA5ED01C67936AfbEB2022E93dB179c24116976' as const
 
 export const accountFactoryConfig = {
   address: accountFactoryAddress,
