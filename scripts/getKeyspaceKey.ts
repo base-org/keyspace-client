@@ -1,8 +1,11 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "../utils/argparse";
 import { getAccount } from "../utils/keyspace";
-import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeySecp256k1 } from "./secp256k1";
-import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeyWebAuthn } from "./webAuthn";
+import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeySecp256k1 } from "../utils/encodeSignatures/secp256k1";
+import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeyWebAuthn } from "../utils/encodeSignatures/webAuthn";
+import { vkHashWebAuthnAccount } from "./lib/webAuthn";
+import { vkHashEcdsaAccount } from "./lib/secp256k1";
+import { client } from "./lib/client";
 
 
 async function main() {
@@ -22,14 +25,14 @@ async function main() {
   const args = parser.parse_args();
   let keyspaceKey;
   if (args.signature_type === "secp256k1") {
-    keyspaceKey = await getKeyspaceKeyForPrivateKeySecp256k1(args.private_key);
+    keyspaceKey = await getKeyspaceKeyForPrivateKeySecp256k1(args.private_key, vkHashEcdsaAccount);
   } else if (args.signature_type === "webauthn") {
-    keyspaceKey = await getKeyspaceKeyForPrivateKeyWebAuthn(args.private_key);
+    keyspaceKey = await getKeyspaceKeyForPrivateKeyWebAuthn(args.private_key, vkHashWebAuthnAccount);
   } else {
     console.error("Invalid circuit type");
   }
   console.log("Keyspace key:", keyspaceKey);
-  console.log("Account address:", await getAccount(keyspaceKey as `0x${string}`, 0n, args.signature_type));
+  console.log("Account address:", await getAccount(client, keyspaceKey as `0x${string}`, 0n, args.signature_type));
 }
 
 if (import.meta.main) {

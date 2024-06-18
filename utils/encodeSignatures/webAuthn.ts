@@ -1,6 +1,9 @@
 import { base64urlnopad } from "@scure/base";
-import { Hex, encodeAbiParameters, stringToHex, hexToBigInt } from "viem";
-import { dummyConfigProof } from "./utils";
+import { Hex, encodeAbiParameters, hexToBigInt, stringToHex } from "viem";
+import { ECDSA } from "../../scripts/lib/webAuthn";
+import { getKeyspaceKey, serializePublicKeyFromPoint } from "../keyspace";
+import { dummyConfigProof, getDataHash } from "./utils";
+const ECDSA = require("ecdsa-secp256r1");
 
 
 export interface WebAuthnSignature {
@@ -92,4 +95,13 @@ export function encodeWebAuthnAuth(
   );
 }
 
+export function getDataHashForPrivateKey(privateKey: ECDSA): Hex {
+  const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
+  return getDataHash(pk256);
+}
+
+export function getKeyspaceKeyForPrivateKey(privateKey: ECDSA, vkHash: Hex): Hex {
+  const dataHash = getDataHashForPrivateKey(privateKey);
+  return getKeyspaceKey(vkHash, dataHash);
+}
 

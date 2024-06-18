@@ -1,44 +1,19 @@
-import { bundlerActions, BundlerClient } from "permissionless";
-import { createPublicClient, Hex, http, PublicClient } from "viem";
-import { baseSepolia } from "viem/chains";
+import { Hex } from "viem";
 
-import { entryPointAddress } from "../generated";
-import { keyspaceActions } from "../keyspace-viem/decorators/keyspace";
-import { getDataHash } from "../utils/encodeSignatures/utils";
-import { encodeSignature } from "../utils/encodeSignatures/webAuthn";
-import { getAccount, getKeyspaceConfigProof, getKeyspaceKey, serializePublicKeyFromPoint } from "../utils/keyspace";
-import { p256WebAuthnSign } from "../utils/sign";
-import { buildUserOp, Call, getUserOpHash } from "../utils/smartWallet";
-const ECDSA = require("ecdsa-secp256r1");
+import { entryPointAddress } from "../../generated";
+import { getDataHash } from "../../utils/encodeSignatures/utils";
+import { encodeSignature } from "../../utils/encodeSignatures/webAuthn";
+import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromPoint } from "../../utils/keyspace";
+import { p256WebAuthnSign } from "../../utils/sign";
+import { buildUserOp, Call, getUserOpHash } from "../../utils/smartWallet";
+import { bundlerClient, chain, client, keyspaceClient } from "./client";
+export const ECDSA = require("ecdsa-secp256r1");
 
-type ECDSA = {
+export type ECDSA = {
   x: Buffer,
   y: Buffer,
   sign: (message: string, format: string) => Buffer,
 };
-
-const chain = baseSepolia;
-
-export const client: PublicClient = createPublicClient({
-  chain,
-  transport: http(
-    process.env.RPC_URL || "",
-  ),
-});
-
-export const bundlerClient: BundlerClient = createPublicClient({
-  chain,
-  transport: http(
-    process.env.BUNDLER_RPC_URL || "",
-  ),
-}).extend(bundlerActions);
-
-export const keyspaceClient = createPublicClient({
-  chain,
-  transport: http(
-    process.env.KEYSPACE_RPC_URL || "https://sepolia-alpha.key.space",
-  ),
-}).extend(keyspaceActions());
 
 const jwk = JSON.parse(process.env.P256_JWK || "");
 export const p256PrivateKey: ECDSA = ECDSA.fromJWK(jwk);
@@ -47,18 +22,8 @@ export const authenticatorData = "0x49960de5880e8c687434170f6476605b8fe4aeb9a286
 // generated KZG commitment instead of one with a trusted setup.
 export const vkHashWebAuthnAccount = "0x8035f6d10fc783cfb1b0f9392dff5b6bc3f3665e47b36374c19624e9675cd8";
 
-export function getDataHashForPrivateKey(privateKey: ECDSA): Hex {
-  const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
-  return getDataHash(pk256);
-}
-
-export function getKeyspaceKeyForPrivateKey(privateKey: ECDSA): Hex {
-  const dataHash = getDataHashForPrivateKey(privateKey);
-  return getKeyspaceKey(vkHashWebAuthnAccount, dataHash);
-}
-
 export async function makeCalls(keyspaceKey: Hex, privateKey: ECDSA, calls: Call[], paymasterData = "0x" as Hex) {
-  const account = await getAccount(keyspaceKey, 0n, "webauthn");
+  const account = await getAccount(client, keyspaceKey, 0n, "webauthn");
   const op = await buildUserOp(client, {
     account,
     ksKey: keyspaceKey,

@@ -7,8 +7,8 @@ import {
   fromHex,
 } from "viem";
 import { SignReturnType } from "viem/accounts";
-import { getPublicKeyPoint } from "../keyspace";
-import { dummyConfigProof } from "./utils";
+import { getKeyspaceKey, getPublicKeyPoint, serializePublicKeyFromPrivateKey } from "../keyspace";
+import { dummyConfigProof, getDataHash } from "./utils";
 
 
 export function buildDummySignature() {
@@ -60,5 +60,15 @@ export function encodeSignature({
     hexToBigInt("0x" + Buffer.from(publicKeyPoint.y).toString("hex") as Hex),
     configProof,
   ])
+}
+
+export function getDataHashForPrivateKey(privateKey: Hex): Hex {
+  const pk256 = serializePublicKeyFromPrivateKey(privateKey);
+  return getDataHash(pk256);
+}
+
+export function getKeyspaceKeyForPrivateKey(privateKey: Hex, vkHash: Hex): Hex {
+  const dataHash = getDataHashForPrivateKey(privateKey);
+  return getKeyspaceKey(vkHash, dataHash);
 }
 
