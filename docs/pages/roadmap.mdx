@@ -37,12 +37,12 @@ Currently, `Account` circuits are only designed to manage the key configuration 
 
 ### Optimize Recursive Circuits
 
-It currently costs 330,000 gas to verify a single key recovery proof vs the ~80,000 gas cost of just writing keys directly to L1. The proofs can batch multiple recoveries, and we expect that more recoveries in a single would have a sublinear increase to the gas cost. But in practice, we don't expect to be able to batch many recoveries soon: there seem to be ~100 recoveries per day for Safe wallets on mainnet after five years of adoption.
+Recovery proofs currently take five to ten minutes to generate, but recent improvements in proving systems offer 30x-100x increases in speed.
 
-We aim to make two optimizations to our circuits:
+We aim to explore two paths for optimizing our circuits:
 
-1. Use gnark's AssertDifferentProofs to get us down to a single pairing at the end of the recurse circuit.
-2. Convert the inner proofs to use Vortex, plonky2, or STARK-in-SNARK. 
+1. Convert the inner proofs to use Vortex, plonky2, plonky3, or STARK-in-SNARK. 
+2. Use gnark's AssertDifferentProofs to get us down to a single pairing at the end of the recurse circuit.
 
 ### Aggregate Config Proofs via ERC 4337 Aggregators
 
@@ -50,4 +50,6 @@ Aggregators in ERC 4337 were designed to allow BLS signatures to be aggregated, 
 
 ### Make Keyspace an L3
 
-It costs 330,000 gas for the sequencer to verify proofs on L1, which makes the expected cost per key change fairly high. It would be cheaper to settle on a [minimal L2](https://vitalik.eth.limo/general/2022/09/17/layer_3.html#rollups-and-validiums-have-a-confirmation-time-vs-fixed-cost-tradeoff.-layer-3s-can-help-fix-this.-but-what-else-can) designed just for ZK systems to aggregate their proofs and update their state on L1.
+It currently costs 330,000 gas to verify a single key recovery proof vs the ~80,000 gas cost of just writing keys directly to L1. The proofs can batch multiple recoveries, and we expect that more recoveries in a single would have a sublinear increase to the gas cost. But in practice, we don't expect to be able to batch many recoveries soon: there seem to be ~100 recoveries per day for Safe wallets on mainnet after five years of adoption.
+
+It would be cheaper to settle on a [minimal L2](https://vitalik.eth.limo/general/2022/09/17/layer_3.html#rollups-and-validiums-have-a-confirmation-time-vs-fixed-cost-tradeoff.-layer-3s-can-help-fix-this.-but-what-else-can) designed just for ZK systems to aggregate their proofs and update their state on L1.

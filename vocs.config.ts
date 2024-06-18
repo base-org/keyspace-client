@@ -19,6 +19,10 @@ export default defineConfig({
       link: '/deployments',
     },
     {
+      text: 'Releases',
+      link: '/releases',
+    },
+    {
       text: 'Architecture',
       link: '/architecture',
     },

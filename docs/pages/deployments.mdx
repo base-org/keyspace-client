@@ -12,12 +12,16 @@ title: Deployments
 
 ## BridgedKeyStore
 
-| Network | Address |
-| ------- | ---------------- |
-| Base Sepolia | [0xa3c95c6fb0151b42C29754FEF66b38dd6Eaa2950](https://sepolia.basescan.org/address/0xa3c95c6fb0151b42c29754fef66b38dd6eaa2950) |
-| Optimism Sepolia | [0x6ECa30e3Be56Cf7FccF920a5Ee66B77940A5806F](https://sepolia-optimism.etherscan.io/address/0x6ECa30e3Be56Cf7FccF920a5Ee66B77940A5806F) |
-| Arbitrum Sepolia | --- |
-| Gnosis Chiado | --- |
-| Polygon Amoy | --- |
-| BSC Testnet | --- |
-| Avalanche Fuji | --- |
+| Network | Address | Sync Type |
+| ------- | ---------------- | --------- |
+| Base Sepolia | [0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2](https://sepolia.basescan.org/address/0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2#code) | Trustless |
+| Optimism Sepolia | [0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2](https://sepolia-optimism.etherscan.io/address/0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2#code) | Trustless |
+| Arbitrum Sepolia | [0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2](https://sepolia.arbiscan.io/address/0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2#code) | Oracle\* |
+| Gnosis Chiado | [0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2](https://gnosis-chiado.blockscout.com/address/0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2?tab=contract) | Oracle |
+| Polygon Amoy | [0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2](https://amoy.polygonscan.com/address/0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2#code) | Oracle |
+| BSC Testnet | [0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2](https://testnet.bscscan.com/address/0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2#code) | Oracle |
+| Avalanche Fuji | [0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2](https://testnet.snowtrace.io/address/0x610A7e97C6D2F1E09e6390F013BFCc39B8EE49e2/contract/43113/code) | Oracle |
+
+:::note
+\* Since Arbitrum is a rollup, L1 blocks are part of its consensus, so trustless syncing is technically feasible. However, neither L1 block hashes nor L1 beacon block roots are currently exposed in a way that smart contracts can consume.
+:::
