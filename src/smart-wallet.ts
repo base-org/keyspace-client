@@ -1,5 +1,5 @@
 import { estimateUserOperationGas, getRequiredPrefund, UserOperation } from "permissionless";
-import { Address, Chain, encodeAbiParameters, encodeFunctionData, fromHex, Hex, keccak256, PublicClient, Transport } from "viem";
+import { Address, Chain, encodeAbiParameters, encodeFunctionData, formatEther, formatGwei, fromHex, Hex, keccak256, PublicClient, Transport } from "viem";
 import { estimateFeesPerGas, getBytecode, readContract } from "viem/actions";
 import { accountAbi, accountFactoryAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../generated";
 import { buildDummySignature as buildDummySecp256k1 } from "./encode-signatures/secp256k1";
@@ -67,7 +67,7 @@ export async function buildUserOp(
     address: account,
   });
   if (senderBalance < requiredPrefund) {
-    throw new Error(`Sender address does not have enough native tokens`)
+    throw new Error(`Sender address ${account} balance (${formatEther(senderBalance)} ETH) is less than required prefund (${formatEther(requiredPrefund)} ETH)`);
   }
 
   // NOTE: The gas limits provided in the user operation seem to override any

@@ -6,6 +6,7 @@ import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeyWebAuthn } fr
 import { vkHashWebAuthnAccount } from "./lib/webauthn";
 import { vkHashEcdsaAccount } from "./lib/secp256k1";
 import { client } from "./lib/client";
+const ECDSA = require("ecdsa-secp256r1");
 
 
 async function main() {
@@ -27,7 +28,8 @@ async function main() {
   if (args.signature_type === "secp256k1") {
     keyspaceKey = await getKeyspaceKeyForPrivateKeySecp256k1(args.private_key, vkHashEcdsaAccount);
   } else if (args.signature_type === "webauthn") {
-    keyspaceKey = await getKeyspaceKeyForPrivateKeyWebAuthn(args.private_key, vkHashWebAuthnAccount);
+    const privateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
+    keyspaceKey = await getKeyspaceKeyForPrivateKeyWebAuthn(privateKey, vkHashWebAuthnAccount);
   } else {
     console.error("Invalid circuit type");
   }
