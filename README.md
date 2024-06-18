@@ -1,6 +1,6 @@
 # Example Keyspace Client
 
-An example Keyspace client implemented in TypeScript. This client is the basis for the Keyspace documentation and will eventually become a client library for Keyspace.
+An example Keyspace client implemented in TypeScript. This client is the basis for the [Keyspace documentation](https://docs.key.space/) and will eventually become a client library for Keyspace.
 
 ## Install Dependencies
 ```bash
