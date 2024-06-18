@@ -8,10 +8,14 @@ Smart wallet vendors typically run web services to support their wallet clients.
 
 For Keyspace-integrated wallets, wallet vendors can expect to run two support services: an indexer and a recovery proof service.
 
-## Indexer
+## Signing Key Indexer
 
 Anyone can run a Keyspace node to have a local copy of the Keyspace database that can be queried directly or via the `mksr_get` JSON RPC call exposed by the node. However, we expect many wallet vendors to want to update their own databases when a user changes their wallet configuration. This helps provide APIs to connect the signing key present in the application with wallets that the key is authorized to access.
 
 ## Recovery Proof Service
 
 Keyspace is designed to store the configuration for any kind of wallet regardless of its authentication logic. But that means that wallet vendors must be prepared to help their users generate recovery proofs to change keys using the logic chosen by the vendor. Keyspace will provide an example recovery proof service that generates proofs for the example circuits, but wallet vendors are encouraged to run and customize their own versions of the service.
+
+## Multisig Transaction Service
+
+Smart wallets that authorize transactions with multiple signatures typically run a service to collect signatures from signers until the threshold has been reached, like [Safe Transaction Service](https://docs.safe.global/core-api/api-safe-transaction-service) does. Beyond supporting typical transactions, these services will need to be extended to support Keyspace recovery transactions.
