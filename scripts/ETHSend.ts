@@ -1,7 +1,6 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "../utils/argparse";
 import { Call } from "../utils/smartWallet";
-import * as webAuthnBase from "./base";
 import * as keyspaceSecp256k1Base from "./keyspace/secp256k1/base";
 import * as keyspaceWebAuthnBase from "./keyspace/webAuthn/base";
 import { getAccount } from "../utils/keyspace";
@@ -26,7 +25,7 @@ async function main() {
   });
 
   const args = parser.parse_args();
-  let baseModule: any = webAuthnBase;
+  let baseModule: any;
   let privateKey: any;
   if (args.signature_type === "secp256k1") {
     console.log("Using secp256k1 via keyspace...");
