@@ -11,23 +11,19 @@ Once a smart contract wallet has integrated Keyspace support, the client softwar
 Transactions for Keyspace wallets are authorized by the user's signature alongside a proof of the wallet's current configuration in Keyspace. Keyspace's [`mksr_proof`](#keyspace-rpc-api) RPC call retrieves the needed proof from a Keyspace node.
 
 ```ts twoslash
-import { Hex, createPublicClient, http } from "viem";
-import { baseSepolia } from "viem/chains";
-import { sign } from "viem/accounts";
-import { getKeyspaceConfigProof, serializePublicKeyFromBytes } from "./utils/keyspace";
-import { encodeSignatureWrapper } from "./utils/encodeSignatures/secp256k1";
 import { secp256k1 } from "@noble/curves/secp256k1";
-import { getDataHash } from "./utils/encodeSignatures/utils";
-import { keyspaceActions } from "./keyspace-viem/decorators/keyspace";
+import { Hex } from "viem";
+import { sign } from "viem/accounts";
 
-const chain = baseSepolia;
-const vkHashEcdsaAccount = "0xe513408e896618fd2b4877b44ecc81e6055647f6abb48e0356384fc63b2f72";
-const keyspaceClient = createPublicClient({
-  chain,
-  transport: http(
-    process.env.KEYSPACE_RPC_URL || "https://sepolia-alpha.key.space"
-  ),
-}).extend(keyspaceActions());
+import { encodeSignature } from "./src/encode-signatures/secp256k1";
+import { getDataHash } from "./src/encode-signatures/utils";
+import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromBytes } from "./src/keyspace";
+import { buildUserOp, Call, getUserOpHash } from "./src/smart-wallet";
+import { client, chain, bundlerClient, keyspaceClient } from "./scripts/lib/client";
+
+// This verification key is not production-ready because it uses a locally
+// generated KZG commitment instead of one with a trusted setup.
+export const vkHashEcdsaAccount = "0xe513408e896618fd2b4877b44ecc81e6055647f6abb48e0356384fc63b2f72";
 
 // ---cut---
 export async function signAndWrap(
@@ -37,10 +33,8 @@ export async function signAndWrap(
   const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
   const pk256 = serializePublicKeyFromBytes(publicKey);
   const dataHash = getDataHash(pk256);
-  const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashEcdsaAccount, dataHash);
-  return encodeSignatureWrapper({
+  const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashEcdsaAccount, dataHash);  return encodeSignature({
     signature,
-    keyspaceKey,
     publicKey,
     configProof: configProof.proof,
   });
