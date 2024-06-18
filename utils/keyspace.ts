@@ -7,7 +7,7 @@ import {
 import { poseidonPerm } from "@zk-kit/poseidon-cipher";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { GetConfigProofReturnType, KeyspaceClient } from "../keyspace-viem/actions/types";
-import { client } from "../scripts/keyspace/secp256k1/base";
+import { client } from "../scripts/secp256k1";
 import { getAccountAddress } from "./smartWallet";
 
 /**

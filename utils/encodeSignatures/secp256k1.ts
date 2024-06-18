@@ -3,6 +3,8 @@ import {
   encodePacked,
   type Hex,
   hexToBigInt,
+  toHex,
+  fromHex,
 } from "viem";
 import { SignReturnType } from "viem/accounts";
 import { getPublicKeyPoint } from "../keyspace";
@@ -27,8 +29,11 @@ export function encodePackedSignature(signature: SignReturnType): Hex {
   return encodePacked(
     ["bytes32", "bytes32", "uint8"],
     [
-      signature.r,
-      signature.s,
+      // Viem's sign function returns Hex values for r and s without specifying,
+      // a size, which occasionally produces 63-character Hex values that
+      // encodePacked will reject.
+      toHex(fromHex(signature.r, "bigint"), { size: 32 }),
+      toHex(fromHex(signature.s, "bigint"), { size: 32 }),
       parseInt(signature.v.toString()),
     ],
   );

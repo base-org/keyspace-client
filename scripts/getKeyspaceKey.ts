@@ -1,8 +1,8 @@
 import { ArgumentParser } from "argparse";
-import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeySecp256k1 } from "./secp256k1/base";
-import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeyWebAuthn } from "./webAuthn/base";
-import { defaultToEnv } from "../../utils/argparse";
-import { getAccount } from "../../utils/keyspace";
+import { defaultToEnv } from "../utils/argparse";
+import { getAccount } from "../utils/keyspace";
+import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeySecp256k1 } from "./secp256k1";
+import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeyWebAuthn } from "./webAuthn";
 
 
 async function main() {

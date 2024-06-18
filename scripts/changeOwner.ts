@@ -1,14 +1,14 @@
-import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
-import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient, recoveryClient } from "./secp256k1/base";
-import { getKeyspaceKey } from "../../utils/keyspace";
-import { vkHashWebAuthnAccount } from "../keyspace/webAuthn/base";
-import { ECDSA, encodePackedSignature } from "../../utils/encodeSignatures/secp256k1";
-import { encodeWebAuthnAuth } from "../../utils/encodeSignatures/webAuthn";
-import { p256WebAuthnSign } from "../../utils/sign";
-import { getDataHashForPrivateKey as getDataHashWebAuthn, authenticatorData } from "./webAuthn/base";
-import { sign } from "viem/accounts";
 import { ArgumentParser } from "argparse";
-import { defaultToEnv } from "../../utils/argparse";
+import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
+import { sign } from "viem/accounts";
+
+import { defaultToEnv } from "../utils/argparse";
+import { ECDSA, encodePackedSignature } from "../utils/encodeSignatures/secp256k1";
+import { encodeWebAuthnAuth } from "../utils/encodeSignatures/webAuthn";
+import { getKeyspaceKey } from "../utils/keyspace";
+import { p256WebAuthnSign } from "../utils/sign";
+import { getDataHashForPrivateKey as getDataHashSecp256k1, keyspaceClient, recoveryClient, vkHashEcdsaAccount } from "./secp256k1";
+import { authenticatorData, getDataHashForPrivateKey as getDataHashWebAuthn, vkHashWebAuthnAccount } from "./webAuthn";
 const ECDSA = require("ecdsa-secp256r1");
 
 

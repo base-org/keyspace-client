@@ -2,7 +2,6 @@ import { defineConfig } from "@wagmi/cli";
 import entrypointABI from "./abis/Entrypoint.json";
 import smartWalletABI from "./abis/SmartWallet.json";
 import smartWalletFactoryABI from "./abis/SmartWalletFactory.json";
-import swapRouterABI from "./abis/SwapRouter.json";
 
 export default defineConfig({
   out: "./generated.ts",

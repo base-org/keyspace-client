@@ -1,14 +1,15 @@
 import { bundlerActions, BundlerClient } from "permissionless";
 import { createPublicClient, Hex, http, PublicClient } from "viem";
 import { baseSepolia } from "viem/chains";
+
+import { entryPointAddress } from "../generated";
+import { keyspaceActions } from "../keyspace-viem/decorators/keyspace";
+import { getDataHash } from "../utils/encodeSignatures/utils";
+import { encodeSignature } from "../utils/encodeSignatures/webAuthn";
+import { getAccount, getKeyspaceConfigProof, getKeyspaceKey, serializePublicKeyFromPoint } from "../utils/keyspace";
+import { p256WebAuthnSign } from "../utils/sign";
+import { buildUserOp, Call, getUserOpHash } from "../utils/smartWallet";
 const ECDSA = require("ecdsa-secp256r1");
-import { entryPointAddress } from "../../../generated";
-import { encodeSignature } from "../../../utils/encodeSignatures/webAuthn";
-import { buildUserOp, Call, getUserOpHash } from "../../../utils/smartWallet";
-import { keyspaceActions } from "../../../keyspace-viem/decorators/keyspace";
-import { serializePublicKeyFromPoint, getKeyspaceKey, getKeyspaceConfigProof, getAccount } from "../../../utils/keyspace";
-import { p256WebAuthnSign } from "../../../utils/sign";
-import { getDataHash } from "../../../utils/encodeSignatures/utils";
 
 type ECDSA = {
   x: Buffer,
