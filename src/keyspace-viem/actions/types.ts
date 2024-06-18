@@ -1,7 +1,7 @@
 import { Chain, Client, Hash, Hex, PublicActions, PublicRpcSchema, RpcSchema, Transport } from "viem";
 import { Prettify } from "viem/chains";
 import { KeyspaceActions } from "../decorators/keyspace";
-import { RecoveryServiceActions } from "../decorators/recoveryService";
+import { RecoveryServiceActions } from "../decorators/recovery-service";
 
 export type GetConfigProofParameters = {
   key: Hex;

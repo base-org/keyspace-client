@@ -1,10 +1,10 @@
 import { ArgumentParser } from "argparse";
-import { defaultToEnv } from "../utils/argparse";
-import { Call } from "../utils/smartWallet";
-import * as webAuthnBase from "./base";
-import * as keyspaceSecp256k1Base from "./keyspace/secp256k1/base";
-import * as keyspaceWebAuthnBase from "./keyspace/webAuthn/base";
-import { getAccount } from "../utils/keyspace";
+import { defaultToEnv } from "./lib/argparse";
+import { getAccount } from "../src/keyspace";
+import { Call } from "../src/smart-wallet";
+import * as keyspaceSecp256k1Base from "./lib/secp256k1";
+import * as keyspaceWebAuthnBase from "./lib/webauthn";
+import { client } from "./lib/client";
 const ECDSA = require("ecdsa-secp256r1");
 
 async function main() {
@@ -26,7 +26,7 @@ async function main() {
   });
 
   const args = parser.parse_args();
-  let baseModule: any = webAuthnBase;
+  let baseModule: any;
   let privateKey: any;
   if (args.signature_type === "secp256k1") {
     console.log("Using secp256k1 via keyspace...");
@@ -40,7 +40,7 @@ async function main() {
     console.error("Invalid circuit type");
   }
 
-  const to = await getAccount(args.keyspace_key, 0n, args.signature_type);
+  const to = await getAccount(client, args.keyspace_key, 0n, args.signature_type);
   const amount = 1n;
   const calls: Call[] = [{
     index: 0,

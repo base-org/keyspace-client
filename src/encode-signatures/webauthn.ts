@@ -1,6 +1,7 @@
 import { base64urlnopad } from "@scure/base";
-import { Hex, encodeAbiParameters, stringToHex, hexToBigInt } from "viem";
-import { dummyConfigProof } from "./utils";
+import { Hex, encodeAbiParameters, hexToBigInt, stringToHex } from "viem";
+import { getKeyspaceKey, serializePublicKeyFromPoint } from "../keyspace";
+import { dummyConfigProof, getDataHash } from "./utils";
 
 
 export interface WebAuthnSignature {
@@ -92,4 +93,13 @@ export function encodeWebAuthnAuth(
   );
 }
 
+export function getDataHashForPrivateKey(privateKey: any): Hex {
+  const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
+  return getDataHash(pk256);
+}
+
+export function getKeyspaceKeyForPrivateKey(privateKey: any, vkHash: Hex): Hex {
+  const dataHash = getDataHashForPrivateKey(privateKey);
+  return getKeyspaceKey(vkHash, dataHash);
+}
 

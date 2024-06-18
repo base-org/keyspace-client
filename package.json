@@ -1,6 +1,6 @@
 {
-  "name": "scw-tx",
-  "module": "index.ts",
+  "name": "keyspace",
+  "module": "src/index.ts",
   "type": "module",
   "scripts": { 
     "docs:dev": "vocs dev", 

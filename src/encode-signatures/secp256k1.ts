@@ -3,10 +3,12 @@ import {
   encodePacked,
   type Hex,
   hexToBigInt,
+  toHex,
+  fromHex,
 } from "viem";
 import { SignReturnType } from "viem/accounts";
-import { getPublicKeyPoint } from "../keyspace";
-import { dummyConfigProof } from "./utils";
+import { getKeyspaceKey, getPublicKeyPoint, serializePublicKeyFromPrivateKey } from "../keyspace";
+import { dummyConfigProof, getDataHash } from "./utils";
 
 
 export function buildDummySignature() {
@@ -27,8 +29,11 @@ export function encodePackedSignature(signature: SignReturnType): Hex {
   return encodePacked(
     ["bytes32", "bytes32", "uint8"],
     [
-      signature.r,
-      signature.s,
+      // Viem's sign function returns Hex values for r and s without specifying,
+      // a size, which occasionally produces 63-character Hex values that
+      // encodePacked will reject.
+      toHex(fromHex(signature.r, "bigint"), { size: 32 }),
+      toHex(fromHex(signature.s, "bigint"), { size: 32 }),
       parseInt(signature.v.toString()),
     ],
   );
@@ -55,5 +60,15 @@ export function encodeSignature({
     hexToBigInt("0x" + Buffer.from(publicKeyPoint.y).toString("hex") as Hex),
     configProof,
   ])
+}
+
+export function getDataHashForPrivateKey(privateKey: Hex): Hex {
+  const pk256 = serializePublicKeyFromPrivateKey(privateKey);
+  return getDataHash(pk256);
+}
+
+export function getKeyspaceKeyForPrivateKey(privateKey: Hex, vkHash: Hex): Hex {
+  const dataHash = getDataHashForPrivateKey(privateKey);
+  return getKeyspaceKey(vkHash, dataHash);
 }
 
