@@ -1,6 +1,6 @@
 import { Account, Chain, Client, Transport } from "viem";
-import { GetSignatureProofParameters, GetSignatureProofReturnType } from "../actions/types";
 import { getSignatureProof } from "../actions/getSignatureProof";
+import { GetSignatureProofParameters, GetSignatureProofReturnType } from "../actions/types";
 
 export type RecoveryServiceActions = {
   getSignatureProof: (parameters: GetSignatureProofParameters) => Promise<GetSignatureProofReturnType>;

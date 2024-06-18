@@ -3,10 +3,10 @@ import { Hex } from "viem";
 import { sign } from "viem/accounts";
 
 import { entryPointAddress } from "../../generated";
-import { encodeSignature } from "../../utils/encodeSignatures/secp256k1";
-import { getDataHash } from "../../utils/encodeSignatures/utils";
-import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromBytes } from "../../utils/keyspace";
-import { buildUserOp, Call, getUserOpHash } from "../../utils/smartWallet";
+import { encodeSignature } from "../../src/encode-signatures/secp256k1";
+import { getDataHash } from "../../src/encode-signatures/utils";
+import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromBytes } from "../../src/keyspace";
+import { buildUserOp, Call, getUserOpHash } from "../../src/smart-wallet";
 import { client, chain, bundlerClient, keyspaceClient } from "./client";
 
 // This verification key is not production-ready because it uses a locally

@@ -10,13 +10,11 @@ import {
   type Hex,
 } from "viem";
 import { sign } from "viem/accounts";
-import { GetConfigProofReturnType, KeyspaceClient, RecoveryServiceClient } from "../keyspace-viem/actions/types";
-import { encodePackedSignature } from "../utils/encodeSignatures/secp256k1";
-import { encodeWebAuthnAuth } from "../utils/encodeSignatures/webAuthn";
-import { p256WebAuthnSign } from "../utils/sign";
-import { getDataHashForPrivateKey as getDataHashSecp256k1 } from "./encodeSignatures/secp256k1";
-import { getDataHashForPrivateKey as getDataHashWebAuthn } from "./encodeSignatures/webAuthn";
-import { getAccountAddress } from "./smartWallet";
+import { p256WebAuthnSign } from "../src/sign";
+import { encodePackedSignature, getDataHashForPrivateKey as getDataHashSecp256k1 } from "./encode-signatures/secp256k1";
+import { encodeWebAuthnAuth, getDataHashForPrivateKey as getDataHashWebAuthn } from "./encode-signatures/webauthn";
+import { GetConfigProofReturnType, KeyspaceClient, RecoveryServiceClient } from "./keyspace-viem/actions/types";
+import { getAccountAddress } from "./smart-wallet";
 const ECDSA = require("ecdsa-secp256r1");
 
 /**

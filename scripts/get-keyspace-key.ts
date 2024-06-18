@@ -1,9 +1,9 @@
 import { ArgumentParser } from "argparse";
-import { defaultToEnv } from "../utils/argparse";
-import { getAccount } from "../utils/keyspace";
-import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeySecp256k1 } from "../utils/encodeSignatures/secp256k1";
-import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeyWebAuthn } from "../utils/encodeSignatures/webAuthn";
-import { vkHashWebAuthnAccount } from "./lib/webAuthn";
+import { defaultToEnv } from "./lib/argparse";
+import { getAccount } from "../src/keyspace";
+import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeySecp256k1 } from "../src/encode-signatures/secp256k1";
+import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeyWebAuthn } from "../src/encode-signatures/webauthn";
+import { vkHashWebAuthnAccount } from "./lib/webauthn";
 import { vkHashEcdsaAccount } from "./lib/secp256k1";
 import { client } from "./lib/client";
 

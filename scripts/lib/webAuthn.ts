@@ -1,11 +1,11 @@
 import { Hex } from "viem";
 
 import { entryPointAddress } from "../../generated";
-import { getDataHash } from "../../utils/encodeSignatures/utils";
-import { encodeSignature } from "../../utils/encodeSignatures/webAuthn";
-import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromPoint } from "../../utils/keyspace";
-import { p256WebAuthnSign } from "../../utils/sign";
-import { buildUserOp, Call, getUserOpHash } from "../../utils/smartWallet";
+import { getDataHash } from "../../src/encode-signatures/utils";
+import { encodeSignature } from "../../src/encode-signatures/webauthn";
+import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromPoint } from "../../src/keyspace";
+import { p256WebAuthnSign } from "../../src/sign";
+import { buildUserOp, Call, getUserOpHash } from "../../src/smart-wallet";
 import { bundlerClient, chain, client, keyspaceClient } from "./client";
 export const ECDSA = require("ecdsa-secp256r1");
 

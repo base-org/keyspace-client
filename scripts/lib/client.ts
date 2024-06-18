@@ -1,8 +1,8 @@
 import { bundlerActions, BundlerClient } from "permissionless";
 import { createPublicClient, http, HttpTransportConfig, PublicClient } from "viem";
 import { baseSepolia } from "viem/chains";
-import { keyspaceActions } from "../../keyspace-viem/decorators/keyspace";
-import { recoveryServiceActions } from "../../keyspace-viem/decorators/recoveryService";
+import { keyspaceActions } from "../../src/keyspace-viem/decorators/keyspace";
+import { recoveryServiceActions } from "../../src/keyspace-viem/decorators/recovery-service";
 
 export const chain = baseSepolia;
 
