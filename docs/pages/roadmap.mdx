@@ -19,19 +19,19 @@ Instead, both the wallet implementation and the authorized keys must be configur
 
 Keyspace currently ships with two circuits: one for secp256k1 signatures (Ethereum EOA signatures) and one for WebAuthn signatures. Implementing an M-of-N multisignature circuit will support 1-of-N use cases for most personal smart wallets as well as typical multisignature wallets.
 
+### Store Non-Recovery Wallet Configuration
+
+Currently, `Account` circuits are only designed to manage the key configuration used to authorize recoveries and send transactions. However, smart wallets typically want to add additional functionality that needs its own cross-chain configuration, like session keys. We should establish a pattern with our Account circuits that expects additional bytes to follow the owner key configuration in the Keyspace record.
+
+### Data Availability for Extended Keyspace Records
+
+The current plan for `Account` circuits that require more than 256 bytes of data is for them to hash arbitrary length data, store the hash in the Keyspace record, and provide the full data with each transaction and recovery so the hash can be verified. This means that when the user sets their keys, the only value seen onchain is the hash of their configuration. Instead, we could build unlimited Keyspace record length into the protocol itself, so the user posts their entire wallet configuration on Ethereum as calldata or blobdata before it gets hashed.
+
 ### Time-Delayed Recoveries
 
 Keyspace supports first-party key changes out of the box, but what if you actually lost your key? It'd be nice to be able to give recovery authorization to another party who could trigger a key change on your behalf. To minimize the trust required for this recovery agent, it'd be nice to be able to override the recovery request before a time window has elapsed.
 
 To do this, the current time needs to be added as an input to the Account circuits. Further changes are likely required to allow the recovery agent to commit to a change, allow time to elapse, then execute the change.
-
-### Data Availability for Extended Keyspace Records
-
-The current plan for `Account` circuits that require more than 256 bytes of data is for them to hash arbitrary length data, store the hash in the Keyspace record, and provide the full data with each transaction and recovery so the hash can be verified. This means that when the user sets their keys, the only value seen onchain is the hash of their configuration. Instead, we could build unlimited Keyspace record length into the protocol itself, so the user posts their entire wallet configuration as Ethereum calldata before it gets hashed.
-
-### Store Non-Recovery Wallet Configuration
-
-Currently, `Account` circuits are only designed to manage the key configuration used to authorize recoveries and send transactions. However, smart wallets typically want to add additional functionality that needs its own cross-chain configuration, like session keys. We should establish a pattern with our Account circuits that expects additional bytes to follow the owner key configuration in the Keyspace record.
 
 ## Lowering Keyspace Cost Overhead
 
@@ -44,16 +44,6 @@ We aim to explore two paths for optimizing our circuits:
 1. Convert the inner proofs to use Vortex, plonky2, plonky3, or STARK-in-SNARK. 
 2. Use gnark's AssertDifferentProofs to get us down to a single pairing at the end of the recurse circuit.
 
-### Aggregate Config Proofs via ERC 4337 Aggregators
-
-Aggregators in ERC 4337 were designed to allow BLS signatures to be aggregated, which saves on data availability costs. We can repurpose this feature for aggregating Keyspace configuration proofs. A single SNARK can prove the current configuration for many wallets, which could help us get the per-transaction gas costs down from 365,000 ($0.11) to less than a cent. (BLS signature aggregation is also being explored as an L2-specific transaction type, and this may be another avenue for aggregating configuration proofs.)
-
-### Make Keyspace an L3
-
-It currently costs 330,000 gas to verify a single key recovery proof vs the ~80,000 gas cost of just writing keys directly to L1. The proofs can batch multiple recoveries, and we expect that more recoveries in a single would have a sublinear increase to the gas cost. But in practice, we don't expect to be able to batch many recoveries soon: there seem to be ~100 recoveries per day for Safe wallets on mainnet after five years of adoption.
-
-It would be cheaper to settle on a [minimal L2](https://vitalik.eth.limo/general/2022/09/17/layer_3.html#rollups-and-validiums-have-a-confirmation-time-vs-fixed-cost-tradeoff.-layer-3s-can-help-fix-this.-but-what-else-can) designed just for ZK systems to aggregate their proofs and update their state on L1.
-
 ### Collect User Fees for Recoveries
 
 Currently, the compute costs of running the prover and the gas costs of verifying these proofs onchain are entirely borne by the sequencer. This makes the system dependent on the generosity of the current sequencer, which isn't resilient enough to be the foundation for cross-chain smart wallets that Keyspace needs to be.
@@ -61,3 +51,13 @@ Currently, the compute costs of running the prover and the gas costs of verifyin
 This work will allow key recovery transactions to be initiated via intents, like in [Across](https://across.to/) and [Relay](https://www.relay.link/). We will add methods for any sequencer to prove that they've included a specific key recovery transaction so users can conditionally lock funds on L1 or an L2 which can be claimed by the sequencer using this proof.
 
 With this functionality, a sequencer can subsidize key recovery transactions if they want to, but if and when their generosity comes to an end, any sequencer can step in to selectively process key recovery transactions that have funded intents.
+
+### Make Keyspace an L3
+
+It currently costs 330,000 gas to verify a single key recovery proof vs the ~80,000 gas cost of just writing keys directly to L1. The proofs can batch multiple recoveries, and we expect that more recoveries in a single would have a sublinear increase to the gas cost. But in practice, we don't expect to be able to batch many recoveries soon: there seem to be ~100 recoveries per day for Safe wallets on mainnet after five years of adoption.
+
+It would be cheaper to settle on a [minimal L2](https://vitalik.eth.limo/general/2022/09/17/layer_3.html#rollups-and-validiums-have-a-confirmation-time-vs-fixed-cost-tradeoff.-layer-3s-can-help-fix-this.-but-what-else-can) designed just for ZK systems to aggregate their proofs and update their state on L1.
+
+### Aggregate Config Proofs via ERC 4337 Aggregators
+
+Aggregators in ERC 4337 were designed to allow BLS signatures to be aggregated, which saves on data availability costs. We can repurpose this feature for aggregating Keyspace configuration proofs. A single SNARK can prove the current configuration for many wallets, which could help us get the per-transaction gas costs down from 365,000 ($0.11) to less than a cent. (BLS signature aggregation is also being explored as an L2-specific transaction type, and this may be another avenue for aggregating configuration proofs.)
