@@ -53,3 +53,11 @@ Aggregators in ERC 4337 were designed to allow BLS signatures to be aggregated, 
 It currently costs 330,000 gas to verify a single key recovery proof vs the ~80,000 gas cost of just writing keys directly to L1. The proofs can batch multiple recoveries, and we expect that more recoveries in a single would have a sublinear increase to the gas cost. But in practice, we don't expect to be able to batch many recoveries soon: there seem to be ~100 recoveries per day for Safe wallets on mainnet after five years of adoption.
 
 It would be cheaper to settle on a [minimal L2](https://vitalik.eth.limo/general/2022/09/17/layer_3.html#rollups-and-validiums-have-a-confirmation-time-vs-fixed-cost-tradeoff.-layer-3s-can-help-fix-this.-but-what-else-can) designed just for ZK systems to aggregate their proofs and update their state on L1.
+
+### Collect User Fees for Recoveries
+
+Currently, the compute costs of running the prover and the gas costs of verifying these proofs onchain are entirely borne by the sequencer. This makes the system dependent on the generosity of the current sequencer, which isn't resilient enough to be the foundation for cross-chain smart wallets that Keyspace needs to be.
+
+This work will allow key recovery transactions to be initiated via intents, like in [Across](https://across.to/) and [Relay](https://www.relay.link/). We will add methods for any sequencer to prove that they've included a specific key recovery transaction so users can conditionally lock funds on L1 or an L2 which can be claimed by the sequencer using this proof.
+
+With this functionality, a sequencer can subsidize key recovery transactions if they want to, but if and when their generosity comes to an end, any sequencer can step in to selectively process key recovery transactions that have funded intents.
