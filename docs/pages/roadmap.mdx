@@ -44,7 +44,7 @@ We aim to explore two paths for optimizing our circuits:
 1. Convert the inner proofs to use Vortex, plonky2, plonky3, or STARK-in-SNARK. 
 2. Use gnark's AssertDifferentProofs to get us down to a single pairing at the end of the recurse circuit.
 
-### Collect User Fees for Recoveries
+### Support Intent-Based Recoveries to Collect User Fees
 
 Currently, the compute costs of running the prover and the gas costs of verifying these proofs onchain are entirely borne by the sequencer. This makes the system dependent on the generosity of the current sequencer, which isn't resilient enough to be the foundation for cross-chain smart wallets that Keyspace needs to be.
 
