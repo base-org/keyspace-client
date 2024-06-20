@@ -29,9 +29,9 @@ The current plan for `Account` circuits that require more than 256 bytes of data
 
 ### Time-Delayed Recoveries
 
-Keyspace supports first-party key changes out of the box, but what if you actually lost your key? It'd be nice to be able to give recovery authorization to another party who could trigger a key change on your behalf. To minimize the trust required for this recovery agent, it'd be nice to be able to override the recovery request before a time window has elapsed.
+Keyspace supports first-party key changes out of the box, but what if you actually lost your key? It'd be nice to be able to give recovery authorization to another party who could trigger a key change on your behalf. To minimize the trust required for this recovery agent, it should be a delayed action that can be overridden before a configurable time window has elapsed.
 
-To do this, the current time needs to be added as an input to the Account circuits. Further changes are likely required to allow the recovery agent to commit to a change, allow time to elapse, then execute the change.
+To do this, we will need to provide our Account circuits with additional context to enforce the delay, like the current time or the current L1 block hash. Further changes are likely required to allow the recovery agent to commit to a change, allow time to elapse, then execute the change.
 
 ## Lowering Keyspace Cost Overhead
 
