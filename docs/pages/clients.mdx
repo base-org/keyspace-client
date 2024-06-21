@@ -58,9 +58,10 @@ To change the configuration stored in Keyspace, the user needs to sign the new c
 
 ```ts twoslash
 import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
-import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./scripts/keyspace/secp256k1/base";
-import { getKeyspaceKey } from "./utils/keyspace";
-import { encodePackedSignature } from "./utils/encodeSignatures/secp256k1";
+import { keyspaceClient, recoveryClient } from "./scripts/lib/client";
+import { vkHashEcdsaAccount } from "./scripts/lib/secp256k1";
+import { getKeyspaceKey } from "./src/keyspace";
+import { encodePackedSignature, getDataHashForPrivateKey as getDataHashSecp256k1 } from "./src/encode-signatures/secp256k1";
 import { sign } from "viem/accounts";
 
 export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: Hex, newPrivateKey: Hex) {
@@ -75,7 +76,7 @@ export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: 
 }
 
 async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" | "webauthn", signatureData: Hex) {
-  const recoverResult = await keyspaceClient.getRecoverProof({
+  const recoverResult = await recoveryClient.getSignatureProof({
     key,
     newKey,
     circuitType,
@@ -112,9 +113,10 @@ With that service available, the client can fetch the zero-knowledge proof they 
 
 ```ts twoslash
 import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
-import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./scripts/keyspace/secp256k1/base";
-import { getKeyspaceKey } from "./utils/keyspace";
-import { encodePackedSignature } from "./utils/encodeSignatures/secp256k1";
+import { vkHashEcdsaAccount } from "./scripts/lib/secp256k1";
+import { keyspaceClient, recoveryClient } from "./scripts/lib/client";
+import { getKeyspaceKey } from "./src/keyspace";
+import { getDataHashForPrivateKey as getDataHashSecp256k1, encodePackedSignature } from "./src/encode-signatures/secp256k1";
 import { sign } from "viem/accounts";
 
 export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: Hex, newPrivateKey: Hex) {
@@ -128,7 +130,7 @@ export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: 
 
 async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" | "webauthn", signatureData: Hex) {
 // ---cut---
-  const recoverResult = await keyspaceClient.getRecoverProof({
+  const recoverResult = await recoveryClient.getSignatureProof({
     key,
     newKey,
     circuitType,
@@ -152,9 +154,10 @@ With those values, you have everything you need for an `mksr_set` call, which se
 
 ```ts twoslash
 import { Hex, encodeAbiParameters, fromHex, keccak256, toHex } from "viem";
-import { getDataHashForPrivateKey as getDataHashSecp256k1, vkHashEcdsaAccount, keyspaceClient } from "./scripts/keyspace/secp256k1/base";
-import { getKeyspaceKey } from "./utils/keyspace";
-import { encodePackedSignature } from "./utils/encodeSignatures/secp256k1";
+import { vkHashEcdsaAccount } from "./scripts/lib/secp256k1";
+import { keyspaceClient, recoveryClient } from "./scripts/lib/client";
+import { getKeyspaceKey } from "./src/keyspace";
+import { getDataHashForPrivateKey as getDataHashSecp256k1, encodePackedSignature } from "./src/encode-signatures/secp256k1";
 import { sign } from "viem/accounts";
 
 export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: Hex, newPrivateKey: Hex) {
@@ -167,7 +170,7 @@ export async function changeOwnerSecp256k1(keyspaceKey: Hex, currentPrivateKey: 
 }
 
 async function performSetConfig(key: Hex, newKey: Hex, circuitType: "secp256k1" | "webauthn", signatureData: Hex) {
-  const recoverResult = await keyspaceClient.getRecoverProof({
+  const recoverResult = await recoveryClient.getSignatureProof({
     key,
     newKey,
     circuitType,
