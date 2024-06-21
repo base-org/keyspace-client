@@ -33,7 +33,7 @@ Keyspace supports first-party key changes out of the box, but what if you actual
 
 To do this, we will need to provide our Account circuits with additional context to enforce the delay, like the current time or the current L1 block hash. Further changes are likely required to allow the recovery agent to commit to a change, allow time to elapse, then execute the change.
 
-## Lowering Keyspace Cost Overhead
+## Lower Keyspace's Overhead Costs
 
 ### Optimize Recursive Circuits
 
@@ -61,3 +61,9 @@ It would be cheaper to settle on a [minimal L2](https://vitalik.eth.limo/general
 ### Aggregate Config Proofs via ERC 4337 Aggregators
 
 Aggregators in ERC 4337 were designed to allow BLS signatures to be aggregated, which saves on data availability costs. We can repurpose this feature for aggregating Keyspace configuration proofs. A single SNARK can prove the current configuration for many wallets, which could help us get the per-transaction gas costs down from 365,000 ($0.11) to less than a cent. (BLS signature aggregation is also being explored as an L2-specific transaction type, and this may be another avenue for aggregating configuration proofs.)
+
+## Decentralize Keyspace
+
+### Implement Vanilla Based Sequencing
+
+[Vanilla based rollups](https://hackmd.io/@Perseverance/rkhnAbi06) are currently the most promising based rollup design for Keyspace. In this type of based rollup, the current L1 validator sequences the L2 rollup if they've already opted-in to be an L2 sequencer. If not, a random opted-in L1 validator is selected to sequence the L2 rollup. This approach makes it easier to deploy a rollup with a single sequencer, then transition to a permissionless sequencer set over time.
