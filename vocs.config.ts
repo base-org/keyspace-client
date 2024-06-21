@@ -6,7 +6,7 @@ export default defineConfig({
   topNav: [
     {
       text: 'Github',
-      link: 'https://github.com/niran/scw-tx/tree/keyspace-beta',
+      link: 'https://github.com/base-org/keyspace-client',
     },
   ],
   sidebar: [
