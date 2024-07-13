@@ -43,6 +43,10 @@ export async function buildUserOp(
     args: [account, 0n],
   });
   let maxFeesPerGas = await estimateFeesPerGas(client);
+  // Increase the maxFeePerGas by 20% to account for differences between viem's
+  // internal gas estimation and Pimlico's custom gas estimation. Pimlico
+  // rejects UserOps with gas fees that are too low.
+  maxFeesPerGas.maxFeePerGas = BigInt(Math.floor(Number(maxFeesPerGas.maxFeePerGas) * 1.2));
 
   const dummySigFunc = signatureType === "secp256k1" ? buildDummySecp256k1 : buildDummyWebAuthn;
   const signature = dummySigFunc();
