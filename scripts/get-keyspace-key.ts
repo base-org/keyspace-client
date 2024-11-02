@@ -1,8 +1,8 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "./lib/argparse";
 import { getKeystoreID } from "../src/keyspace";
-import { getKeyspaceKeyForPrivateKey as getKeyspaceKeyForPrivateKeySecp256k1 } from "../src/encode-signatures/secp256k1";
-import { getStorageHashForPrivateKey } from "../src/encode-signatures/webauthn";
+import { getStorageHashForPrivateKey as getStorageHashForSecp256k1PrivateKey } from "../src/encode-signatures/secp256k1";
+import { getStorageHashForPrivateKey as getStorageHashForWebAuthnPrivateKey } from "../src/encode-signatures/webauthn";
 import { vkHashEcdsaAccount } from "./lib/secp256k1";
 import { client } from "./lib/client";
 import { getAddress } from "../src/smart-wallet";
@@ -26,16 +26,17 @@ async function main() {
   });
 
   const args = parser.parse_args();
-  let keystoreID, storageHash;
+  let storageHash;
   if (args.signature_type === "secp256k1") {
-    keystoreID = getKeyspaceKeyForPrivateKeySecp256k1(args.private_key, vkHashEcdsaAccount);
+    storageHash = getStorageHashForSecp256k1PrivateKey(args.private_key);
   } else if (args.signature_type === "webauthn") {
     const privateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
-    storageHash = getStorageHashForPrivateKey(privateKey);
-    keystoreID = getKeystoreID(controllerAddress, storageHash, 0n);
+    storageHash = getStorageHashForWebAuthnPrivateKey(privateKey);
   } else {
     console.error("Invalid circuit type");
   }
+
+  const keystoreID = getKeystoreID(controllerAddress, storageHash as Hex);
   console.log("Keystore ID:", keystoreID);
   console.log("Account address:", await getAddress(client, {
     controller: controllerAddress,
