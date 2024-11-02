@@ -5,6 +5,7 @@ import {
   hexToBigInt,
   toHex,
   fromHex,
+  Address,
 } from "viem";
 import { SignReturnType } from "viem/accounts";
 import { getKeystoreID, getPublicKeyPoint, serializePublicKeyFromPrivateKey } from "../keyspace";
@@ -62,13 +63,13 @@ export function encodeSignature({
   ])
 }
 
-export function getDataHashForPrivateKey(privateKey: Hex): Hex {
+export function getStorageHashForPrivateKey(privateKey: Hex): Hex {
   const pk256 = serializePublicKeyFromPrivateKey(privateKey);
   return getStorageHash(pk256);
 }
 
-export function getKeyspaceKeyForPrivateKey(privateKey: Hex, vkHash: Hex): Hex {
-  const dataHash = getDataHashForPrivateKey(privateKey);
-  return getKeystoreID(vkHash, dataHash);
+export function getKeyspaceKeyForPrivateKey(privateKey: Hex, controller: Address): Hex {
+  const storageHash = getStorageHashForPrivateKey(privateKey);
+  return getKeystoreID(controller, storageHash);
 }
 

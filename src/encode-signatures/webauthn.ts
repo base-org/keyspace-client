@@ -99,7 +99,7 @@ export function getStorageHashForPrivateKey(privateKey: any): Hex {
 }
 
 export function getKeyspaceKeyForPrivateKey(privateKey: any, controller: Address): Hex {
-  const dataHash = getStorageHashForPrivateKey(privateKey);
-  return getKeystoreID(controller, dataHash);
+  const storageHash = getStorageHashForPrivateKey(privateKey);
+  return getKeystoreID(controller, storageHash);
 }
 

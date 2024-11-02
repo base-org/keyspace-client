@@ -12,16 +12,16 @@ import {
 } from "viem";
 import { sign } from "viem/accounts";
 import { p256WebAuthnSign } from "../src/sign";
-import { encodePackedSignature, getDataHashForPrivateKey as getDataHashSecp256k1 } from "./encode-signatures/secp256k1";
+import { encodePackedSignature, getStorageHashForPrivateKey as getDataHashSecp256k1 } from "./encode-signatures/secp256k1";
 import { encodeWebAuthnAuth, getStorageHashForPrivateKey as getDataHashWebAuthn } from "./encode-signatures/webauthn";
 import { GetConfigProofReturnType, KeyspaceClient, RecoveryServiceClient } from "./keyspace-viem/actions/types";
 const ECDSA = require("ecdsa-secp256r1");
 
 
-export function getKeystoreID(controller: Address, storageHash: Hex, nonce: bigint): Hex {
+export function getKeystoreID(controller: Address, storageHash: Hex): Hex {
   const preimage = encodePacked(
     ["address", "uint96", "uint256"],
-    [controller, nonce, fromHex(storageHash, "bigint")]
+    [controller, BigInt(0), fromHex(storageHash, "bigint")]
   );
   return keccak256(preimage);
 }
