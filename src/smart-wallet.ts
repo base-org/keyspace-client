@@ -109,15 +109,15 @@ export function createAccountCalldata({
   });
 }
 
-export async function getAccountAddress<TChain extends Chain | undefined>(
+export async function getAddress<TChain extends Chain | undefined>(
   client: PublicClient<Transport, TChain>,
-  { ksKey, ksKeyType, nonce }: { ksKey: Hex; ksKeyType: number; nonce: bigint },
+  { controller, storageHash, nonce }: { controller: Address; storageHash: Hex; nonce: bigint },
 ) {
   return await readContract(client, {
     abi: accountFactoryAbi,
     address: accountFactoryAddress,
     functionName: "getAddress",
-    args: [fromHex(ksKey, "bigint"), ksKeyType, nonce],
+    args: [controller, storageHash, nonce],
   });
 }
 

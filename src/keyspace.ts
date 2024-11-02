@@ -4,6 +4,7 @@ import {
   Address,
   PublicClient,
   encodeAbiParameters,
+  encodePacked,
   fromHex,
   keccak256,
   toHex,
@@ -12,31 +13,17 @@ import {
 import { sign } from "viem/accounts";
 import { p256WebAuthnSign } from "../src/sign";
 import { encodePackedSignature, getDataHashForPrivateKey as getDataHashSecp256k1 } from "./encode-signatures/secp256k1";
-import { encodeWebAuthnAuth, getDataHashForPrivateKey as getDataHashWebAuthn } from "./encode-signatures/webauthn";
+import { encodeWebAuthnAuth, getStorageHashForPrivateKey as getDataHashWebAuthn } from "./encode-signatures/webauthn";
 import { GetConfigProofReturnType, KeyspaceClient, RecoveryServiceClient } from "./keyspace-viem/actions/types";
-import { getAccountAddress } from "./smart-wallet";
 const ECDSA = require("ecdsa-secp256r1");
 
-/**
- * Generate the poseidon hash of the inputs provided
- * @param inputs The inputs to hash
- * @returns the hash of the inputs
- * From https://github.com/privacy-scaling-explorations/maci/blob/2fe5c57/crypto/ts/hashing.ts
- */
 
-export const poseidon = (inputs: bigint[]): bigint => poseidonPerm([BigInt(0), ...inputs.map((x) => BigInt(x))])[0];
-
-export function getKeyspaceKey(vkHash: Hex, dataHash: Hex): Hex {
-  // The poseidon hash function provided by viem's preferred @noble/curves
-  // crypto library must be configured manually, and their example usage is not
-  // clear.
-  // https://github.com/paulmillr/scure-starknet/blob/3905471/index.ts#L329-L336
-  // The configured hasher from @zk-kit/poseidon-cipher seems to match the
-  // configuration for BN254 in mdehoog/poseidon, which should be a BW6-761
-  // poseidon hash. That curve forms a 2-pair with the BLS12-377 curve used in
-  // the TxHash proofs.
-  const hash = poseidon([fromHex(vkHash, "bigint"), fromHex(dataHash, "bigint")]);
-  return toHex(hash);
+export function getKeystoreID(controller: Address, storageHash: Hex, nonce: bigint): Hex {
+  const preimage = encodePacked(
+    ["address", "uint96", "uint256"],
+    [controller, nonce, fromHex(storageHash, "bigint")]
+  );
+  return keccak256(preimage);
 }
 
 export function serializePublicKeyFromPoint(x: Uint8Array, y: Uint8Array): Uint8Array {
@@ -83,8 +70,6 @@ export async function getKeyspaceConfigProof(client: KeyspaceClient, keyspaceKey
 }
 
 export async function getAccount(client: PublicClient, ksKey: Hex, nonce: bigint, signatureType: "secp256k1" | "webauthn"): Promise<Address> {
-  const ksKeyType = signatureType === "secp256k1" ? 1 : 2;
-  return await getAccountAddress(client as any, { ksKey, ksKeyType, nonce });
 }
 
 export async function changeOwnerSecp256k1({
@@ -103,7 +88,7 @@ export async function changeOwnerSecp256k1({
   recoveryClient: RecoveryServiceClient;
 }) {
   const dataHash = getDataHashSecp256k1(newPrivateKey);
-  const newKey = getKeyspaceKey(vkHash, dataHash);
+  const newKey = getKeystoreID(vkHash, dataHash);
   const newKey254 = toHex(fromHex(newKey, "bigint") >> BigInt(2), { size: 32 });
   const signature = await sign({ hash: newKey254, privateKey: currentPrivateKey });
   const signatureData = encodePackedSignature(signature);
@@ -135,7 +120,7 @@ export async function changeOwnerWebAuthn({
   recoveryClient: RecoveryServiceClient;
 }) {
   const dataHash = getDataHashWebAuthn(newPrivateKey);
-  const newKey = getKeyspaceKey(vkHash, dataHash);
+  const newKey = getKeystoreID(vkHash, dataHash);
   const newKey254 = toHex(fromHex(newKey, "bigint") >> BigInt(2), { size: 32 });
   const { r, s, clientDataJSON } = p256WebAuthnSign({
     challenge: newKey254,

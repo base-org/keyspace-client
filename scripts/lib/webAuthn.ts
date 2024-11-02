@@ -1,7 +1,7 @@
 import { Hex } from "viem";
 
 import { entryPointAddress } from "../../generated";
-import { getDataHash } from "../../src/encode-signatures/utils";
+import { getStorageHash } from "../../src/encode-signatures/utils";
 import { encodeSignature } from "../../src/encode-signatures/webauthn";
 import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromPoint } from "../../src/keyspace";
 import { p256WebAuthnSign } from "../../src/sign";
@@ -53,7 +53,7 @@ export async function signAndWrap(
     p256PrivateKey: privateKey,
   });
   const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
-  const dataHash = getDataHash(pk256);
+  const dataHash = getStorageHash(pk256);
   const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashWebAuthnAccount, dataHash);
   return encodeSignature({
     signature,

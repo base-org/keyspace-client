@@ -6,45 +6,24 @@ export const accountAbi = [
   {
     type: 'constructor',
     inputs: [
-      { name: 'keyStore_', internalType: 'address', type: 'address' },
-      { name: 'stateVerifier_', internalType: 'address', type: 'address' },
+      { name: 'keystore_', internalType: 'address', type: 'address' },
+      { name: 'aggregator_', internalType: 'address', type: 'address' },
     ],
     stateMutability: 'nonpayable',
   },
-  { type: 'error', inputs: [], name: 'Initialized' },
-  {
-    type: 'error',
-    inputs: [{ name: 'key', internalType: 'uint256', type: 'uint256' }],
-    name: 'InvalidNonceKey',
-  },
-  { type: 'error', inputs: [], name: 'KeyspaceKeyTypeCantBeNone' },
-  {
-    type: 'error',
-    inputs: [{ name: 'selector', internalType: 'bytes4', type: 'bytes4' }],
-    name: 'SelectorNotAllowed',
-  },
-  { type: 'error', inputs: [], name: 'Unauthorized' },
-  { type: 'error', inputs: [], name: 'UnauthorizedCallContext' },
-  { type: 'error', inputs: [], name: 'UpgradeFailed' },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'implementation',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'Upgraded',
-  },
   { type: 'fallback', stateMutability: 'payable' },
+  { type: 'receive', stateMutability: 'payable' },
   {
     type: 'function',
     inputs: [],
-    name: 'REPLAYABLE_NONCE_KEY',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'aggregator',
+    outputs: [
+      {
+        name: '',
+        internalType: 'contract CoinbaseSmartWalletAggregator',
+        type: 'address',
+      },
+    ],
     stateMutability: 'view',
   },
   {
@@ -123,44 +102,6 @@ export const accountAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      {
-        name: 'userOp',
-        internalType: 'struct UserOperation',
-        type: 'tuple',
-        components: [
-          { name: 'sender', internalType: 'address', type: 'address' },
-          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-          { name: 'initCode', internalType: 'bytes', type: 'bytes' },
-          { name: 'callData', internalType: 'bytes', type: 'bytes' },
-          { name: 'callGasLimit', internalType: 'uint256', type: 'uint256' },
-          {
-            name: 'verificationGasLimit',
-            internalType: 'uint256',
-            type: 'uint256',
-          },
-          {
-            name: 'preVerificationGas',
-            internalType: 'uint256',
-            type: 'uint256',
-          },
-          { name: 'maxFeePerGas', internalType: 'uint256', type: 'uint256' },
-          {
-            name: 'maxPriorityFeePerGas',
-            internalType: 'uint256',
-            type: 'uint256',
-          },
-          { name: 'paymasterAndData', internalType: 'bytes', type: 'bytes' },
-          { name: 'signature', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-    ],
-    name: 'getUserOpHashWithoutChainId',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [],
     name: 'implementation',
     outputs: [{ name: '$', internalType: 'address', type: 'address' }],
@@ -168,14 +109,7 @@ export const accountAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: 'ksKey', internalType: 'uint256', type: 'uint256' },
-      {
-        name: 'ksKeyType',
-        internalType: 'enum CoinbaseSmartWallet.KeyspaceKeyType',
-        type: 'uint8',
-      },
-    ],
+    inputs: [{ name: 'ksID', internalType: 'bytes32', type: 'bytes32' }],
     name: 'initialize',
     outputs: [],
     stateMutability: 'payable',
@@ -193,10 +127,17 @@ export const accountAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'keyStore',
+    name: 'keystore',
     outputs: [
-      { name: '', internalType: 'contract IKeyStore', type: 'address' },
+      { name: '', internalType: 'contract BridgedKeystore', type: 'address' },
     ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'keystoreID',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
   },
   {
@@ -211,15 +152,6 @@ export const accountAbi = [
     inputs: [{ name: 'hash', internalType: 'bytes32', type: 'bytes32' }],
     name: 'replaySafeHash',
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'stateVerifier',
-    outputs: [
-      { name: '', internalType: 'contract IVerifier', type: 'address' },
-    ],
     stateMutability: 'view',
   },
   {
@@ -274,7 +206,39 @@ export const accountAbi = [
     ],
     stateMutability: 'nonpayable',
   },
-  { type: 'receive', stateMutability: 'payable' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'implementation',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Upgraded',
+  },
+  { type: 'error', inputs: [], name: 'Initialized' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
+    name: 'InvalidEthereumAddressOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
+    name: 'InvalidOwnerBytesLength',
+  },
+  { type: 'error', inputs: [], name: 'KeyspaceKeyTypeCantBeNone' },
+  {
+    type: 'error',
+    inputs: [{ name: 'selector', internalType: 'bytes4', type: 'bytes4' }],
+    name: 'SelectorNotAllowed',
+  },
+  { type: 'error', inputs: [], name: 'Unauthorized' },
+  { type: 'error', inputs: [], name: 'UnauthorizedCallContext' },
+  { type: 'error', inputs: [], name: 'UpgradeFailed' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -289,16 +253,11 @@ export const accountFactoryAbi = [
     ],
     stateMutability: 'payable',
   },
-  { type: 'error', inputs: [], name: 'KeyRequired' },
   {
     type: 'function',
     inputs: [
-      { name: 'ksKey', internalType: 'uint256', type: 'uint256' },
-      {
-        name: 'ksKeyType',
-        internalType: 'enum CoinbaseSmartWallet.KeyspaceKeyType',
-        type: 'uint8',
-      },
+      { name: 'controller', internalType: 'address', type: 'address' },
+      { name: 'storageHash', internalType: 'bytes32', type: 'bytes32' },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'createAccount',
@@ -314,12 +273,8 @@ export const accountFactoryAbi = [
   {
     type: 'function',
     inputs: [
-      { name: 'ksKey', internalType: 'uint256', type: 'uint256' },
-      {
-        name: 'ksKeyType',
-        internalType: 'enum CoinbaseSmartWallet.KeyspaceKeyType',
-        type: 'uint8',
-      },
+      { name: 'controller', internalType: 'address', type: 'address' },
+      { name: 'storageHash', internalType: 'bytes32', type: 'bytes32' },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'getAddress',
@@ -340,10 +295,11 @@ export const accountFactoryAbi = [
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
   },
+  { type: 'error', inputs: [], name: 'KeyRequired' },
 ] as const
 
 export const accountFactoryAddress =
-  '0x0BA5ED01C67936AfbEB2022E93dB179c24116976' as const
+  '0xFB739503f4C342E1eef28a42c83f89353873784E' as const
 
 export const accountFactoryConfig = {
   address: accountFactoryAddress,
