@@ -1,582 +1,476 @@
 [
   {
-    "inputs":[
+    "type": "constructor",
+    "inputs": [
       {
-        "internalType":"address",
-        "name":"keyStore_",
-        "type":"address"
+        "name": "keystore_",
+        "type": "address",
+        "internalType": "address"
       },
       {
-        "internalType":"address",
-        "name":"stateVerifier_",
-        "type":"address"
+        "name": "aggregator_",
+        "type": "address",
+        "internalType": "address"
       }
     ],
-    "stateMutability":"nonpayable",
-    "type":"constructor"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs":[
-      
-    ],
-    "name":"Initialized",
-    "type":"error"
+    "type": "fallback",
+    "stateMutability": "payable"
   },
   {
-    "inputs":[
+    "type": "receive",
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "aggregator",
+    "inputs": [],
+    "outputs": [
       {
-        "internalType":"uint256",
-        "name":"key",
-        "type":"uint256"
+        "name": "",
+        "type": "address",
+        "internalType": "contract CoinbaseSmartWalletAggregator"
       }
     ],
-    "name":"InvalidNonceKey",
-    "type":"error"
+    "stateMutability": "view"
   },
   {
-    "inputs":[
-      
-    ],
-    "name":"KeyspaceKeyTypeCantBeNone",
-    "type":"error"
-  },
-  {
-    "inputs":[
+    "type": "function",
+    "name": "canSkipChainIdValidation",
+    "inputs": [
       {
-        "internalType":"bytes4",
-        "name":"selector",
-        "type":"bytes4"
+        "name": "functionSelector",
+        "type": "bytes4",
+        "internalType": "bytes4"
       }
     ],
-    "name":"SelectorNotAllowed",
-    "type":"error"
-  },
-  {
-    "inputs":[
-      
-    ],
-    "name":"Unauthorized",
-    "type":"error"
-  },
-  {
-    "inputs":[
-      
-    ],
-    "name":"UnauthorizedCallContext",
-    "type":"error"
-  },
-  {
-    "inputs":[
-      
-    ],
-    "name":"UpgradeFailed",
-    "type":"error"
-  },
-  {
-    "anonymous":false,
-    "inputs":[
+    "outputs": [
       {
-        "indexed":true,
-        "internalType":"address",
-        "name":"implementation",
-        "type":"address"
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
-    "name":"Upgraded",
-    "type":"event"
+    "stateMutability": "pure"
   },
   {
-    "stateMutability":"payable",
-    "type":"fallback"
-  },
-  {
-    "inputs":[
-      
-    ],
-    "name":"REPLAYABLE_NONCE_KEY",
-    "outputs":[
+    "type": "function",
+    "name": "domainSeparator",
+    "inputs": [],
+    "outputs": [
       {
-        "internalType":"uint256",
-        "name":"",
-        "type":"uint256"
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
       }
     ],
-    "stateMutability":"view",
-    "type":"function"
+    "stateMutability": "view"
   },
   {
-    "inputs":[
+    "type": "function",
+    "name": "eip712Domain",
+    "inputs": [],
+    "outputs": [
       {
-        "internalType":"bytes4",
-        "name":"functionSelector",
-        "type":"bytes4"
-      }
-    ],
-    "name":"canSkipChainIdValidation",
-    "outputs":[
-      {
-        "internalType":"bool",
-        "name":"",
-        "type":"bool"
-      }
-    ],
-    "stateMutability":"pure",
-    "type":"function"
-  },
-  {
-    "inputs":[
-      
-    ],
-    "name":"domainSeparator",
-    "outputs":[
-      {
-        "internalType":"bytes32",
-        "name":"",
-        "type":"bytes32"
-      }
-    ],
-    "stateMutability":"view",
-    "type":"function"
-  },
-  {
-    "inputs":[
-      
-    ],
-    "name":"eip712Domain",
-    "outputs":[
-      {
-        "internalType":"bytes1",
-        "name":"fields",
-        "type":"bytes1"
+        "name": "fields",
+        "type": "bytes1",
+        "internalType": "bytes1"
       },
       {
-        "internalType":"string",
-        "name":"name",
-        "type":"string"
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
       },
       {
-        "internalType":"string",
-        "name":"version",
-        "type":"string"
+        "name": "version",
+        "type": "string",
+        "internalType": "string"
       },
       {
-        "internalType":"uint256",
-        "name":"chainId",
-        "type":"uint256"
+        "name": "chainId",
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
-        "internalType":"address",
-        "name":"verifyingContract",
-        "type":"address"
+        "name": "verifyingContract",
+        "type": "address",
+        "internalType": "address"
       },
       {
-        "internalType":"bytes32",
-        "name":"salt",
-        "type":"bytes32"
+        "name": "salt",
+        "type": "bytes32",
+        "internalType": "bytes32"
       },
       {
-        "internalType":"uint256[]",
-        "name":"extensions",
-        "type":"uint256[]"
+        "name": "extensions",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
       }
     ],
-    "stateMutability":"view",
-    "type":"function"
+    "stateMutability": "view"
   },
   {
-    "inputs":[
-      
-    ],
-    "name":"entryPoint",
-    "outputs":[
+    "type": "function",
+    "name": "entryPoint",
+    "inputs": [],
+    "outputs": [
       {
-        "internalType":"address",
-        "name":"",
-        "type":"address"
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
-    "stateMutability":"view",
-    "type":"function"
+    "stateMutability": "view"
   },
   {
-    "inputs":[
+    "type": "function",
+    "name": "execute",
+    "inputs": [
       {
-        "internalType":"address",
-        "name":"target",
-        "type":"address"
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
       },
       {
-        "internalType":"uint256",
-        "name":"value",
-        "type":"uint256"
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
-        "internalType":"bytes",
-        "name":"data",
-        "type":"bytes"
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
-    "name":"execute",
-    "outputs":[
-      
-    ],
-    "stateMutability":"payable",
-    "type":"function"
+    "outputs": [],
+    "stateMutability": "payable"
   },
   {
-    "inputs":[
+    "type": "function",
+    "name": "executeBatch",
+    "inputs": [
       {
-        "components":[
+        "name": "calls",
+        "type": "tuple[]",
+        "internalType": "struct CoinbaseSmartWallet.Call[]",
+        "components": [
           {
-            "internalType":"address",
-            "name":"target",
-            "type":"address"
+            "name": "target",
+            "type": "address",
+            "internalType": "address"
           },
           {
-            "internalType":"uint256",
-            "name":"value",
-            "type":"uint256"
+            "name": "value",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
-            "internalType":"bytes",
-            "name":"data",
-            "type":"bytes"
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
           }
-        ],
-        "internalType":"struct CoinbaseSmartWallet.Call[]",
-        "name":"calls",
-        "type":"tuple[]"
+        ]
       }
     ],
-    "name":"executeBatch",
-    "outputs":[
-      
-    ],
-    "stateMutability":"payable",
-    "type":"function"
+    "outputs": [],
+    "stateMutability": "payable"
   },
   {
-    "inputs":[
+    "type": "function",
+    "name": "executeWithoutChainIdValidation",
+    "inputs": [
       {
-        "internalType":"bytes[]",
-        "name":"calls",
-        "type":"bytes[]"
+        "name": "calls",
+        "type": "bytes[]",
+        "internalType": "bytes[]"
       }
     ],
-    "name":"executeWithoutChainIdValidation",
-    "outputs":[
-      
-    ],
-    "stateMutability":"payable",
-    "type":"function"
+    "outputs": [],
+    "stateMutability": "payable"
   },
   {
-    "inputs":[
+    "type": "function",
+    "name": "implementation",
+    "inputs": [],
+    "outputs": [
       {
-        "components":[
+        "name": "$",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "ksID",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "isValidSignature",
+    "inputs": [
+      {
+        "name": "hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "signature",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "result",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "keystore",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract BridgedKeystore"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "keystoreID",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "proxiableUUID",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "replaySafeHash",
+    "inputs": [
+      {
+        "name": "hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "upgradeToAndCall",
+    "inputs": [
+      {
+        "name": "newImplementation",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "validateUserOp",
+    "inputs": [
+      {
+        "name": "userOp",
+        "type": "tuple",
+        "internalType": "struct UserOperation",
+        "components": [
           {
-            "internalType":"address",
-            "name":"sender",
-            "type":"address"
+            "name": "sender",
+            "type": "address",
+            "internalType": "address"
           },
           {
-            "internalType":"uint256",
-            "name":"nonce",
-            "type":"uint256"
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
-            "internalType":"bytes",
-            "name":"initCode",
-            "type":"bytes"
+            "name": "initCode",
+            "type": "bytes",
+            "internalType": "bytes"
           },
           {
-            "internalType":"bytes",
-            "name":"callData",
-            "type":"bytes"
+            "name": "callData",
+            "type": "bytes",
+            "internalType": "bytes"
           },
           {
-            "internalType":"uint256",
-            "name":"callGasLimit",
-            "type":"uint256"
+            "name": "callGasLimit",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
-            "internalType":"uint256",
-            "name":"verificationGasLimit",
-            "type":"uint256"
+            "name": "verificationGasLimit",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
-            "internalType":"uint256",
-            "name":"preVerificationGas",
-            "type":"uint256"
+            "name": "preVerificationGas",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
-            "internalType":"uint256",
-            "name":"maxFeePerGas",
-            "type":"uint256"
+            "name": "maxFeePerGas",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
-            "internalType":"uint256",
-            "name":"maxPriorityFeePerGas",
-            "type":"uint256"
+            "name": "maxPriorityFeePerGas",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
-            "internalType":"bytes",
-            "name":"paymasterAndData",
-            "type":"bytes"
+            "name": "paymasterAndData",
+            "type": "bytes",
+            "internalType": "bytes"
           },
           {
-            "internalType":"bytes",
-            "name":"signature",
-            "type":"bytes"
+            "name": "signature",
+            "type": "bytes",
+            "internalType": "bytes"
           }
-        ],
-        "internalType":"struct UserOperation",
-        "name":"userOp",
-        "type":"tuple"
-      }
-    ],
-    "name":"getUserOpHashWithoutChainId",
-    "outputs":[
-      {
-        "internalType":"bytes32",
-        "name":"",
-        "type":"bytes32"
-      }
-    ],
-    "stateMutability":"view",
-    "type":"function"
-  },
-  {
-    "inputs":[
-      
-    ],
-    "name":"implementation",
-    "outputs":[
-      {
-        "internalType":"address",
-        "name":"$",
-        "type":"address"
-      }
-    ],
-    "stateMutability":"view",
-    "type":"function"
-  },
-  {
-    "inputs":[
-      {
-        "internalType":"uint256",
-        "name":"ksKey",
-        "type":"uint256"
+        ]
       },
       {
-        "internalType":"enum CoinbaseSmartWallet.KeyspaceKeyType",
-        "name":"ksKeyType",
-        "type":"uint8"
-      }
-    ],
-    "name":"initialize",
-    "outputs":[
-      
-    ],
-    "stateMutability":"payable",
-    "type":"function"
-  },
-  {
-    "inputs":[
-      {
-        "internalType":"bytes32",
-        "name":"hash",
-        "type":"bytes32"
+        "name": "userOpHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
       },
       {
-        "internalType":"bytes",
-        "name":"signature",
-        "type":"bytes"
+        "name": "missingAccountFunds",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "name":"isValidSignature",
-    "outputs":[
+    "outputs": [
       {
-        "internalType":"bytes4",
-        "name":"result",
-        "type":"bytes4"
+        "name": "validationData",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "stateMutability":"view",
-    "type":"function"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs":[
-      
-    ],
-    "name":"keyStore",
-    "outputs":[
+    "type": "event",
+    "name": "Upgraded",
+    "inputs": [
       {
-        "internalType":"contract IKeyStore",
-        "name":"",
-        "type":"address"
+        "name": "implementation",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
-    "stateMutability":"view",
-    "type":"function"
+    "anonymous": false
   },
   {
-    "inputs":[
-      
-    ],
-    "name":"proxiableUUID",
-    "outputs":[
-      {
-        "internalType":"bytes32",
-        "name":"",
-        "type":"bytes32"
-      }
-    ],
-    "stateMutability":"view",
-    "type":"function"
+    "type": "error",
+    "name": "Initialized",
+    "inputs": []
   },
   {
-    "inputs":[
+    "type": "error",
+    "name": "InvalidEthereumAddressOwner",
+    "inputs": [
       {
-        "internalType":"bytes32",
-        "name":"hash",
-        "type":"bytes32"
+        "name": "owner",
+        "type": "bytes",
+        "internalType": "bytes"
       }
-    ],
-    "name":"replaySafeHash",
-    "outputs":[
-      {
-        "internalType":"bytes32",
-        "name":"",
-        "type":"bytes32"
-      }
-    ],
-    "stateMutability":"view",
-    "type":"function"
+    ]
   },
   {
-    "inputs":[
-      
-    ],
-    "name":"stateVerifier",
-    "outputs":[
+    "type": "error",
+    "name": "InvalidOwnerBytesLength",
+    "inputs": [
       {
-        "internalType":"contract IVerifier",
-        "name":"",
-        "type":"address"
+        "name": "owner",
+        "type": "bytes",
+        "internalType": "bytes"
       }
-    ],
-    "stateMutability":"view",
-    "type":"function"
+    ]
   },
   {
-    "inputs":[
-      {
-        "internalType":"address",
-        "name":"newImplementation",
-        "type":"address"
-      },
-      {
-        "internalType":"bytes",
-        "name":"data",
-        "type":"bytes"
-      }
-    ],
-    "name":"upgradeToAndCall",
-    "outputs":[
-      
-    ],
-    "stateMutability":"payable",
-    "type":"function"
+    "type": "error",
+    "name": "KeyspaceKeyTypeCantBeNone",
+    "inputs": []
   },
   {
-    "inputs":[
+    "type": "error",
+    "name": "SelectorNotAllowed",
+    "inputs": [
       {
-        "components":[
-          {
-            "internalType":"address",
-            "name":"sender",
-            "type":"address"
-          },
-          {
-            "internalType":"uint256",
-            "name":"nonce",
-            "type":"uint256"
-          },
-          {
-            "internalType":"bytes",
-            "name":"initCode",
-            "type":"bytes"
-          },
-          {
-            "internalType":"bytes",
-            "name":"callData",
-            "type":"bytes"
-          },
-          {
-            "internalType":"uint256",
-            "name":"callGasLimit",
-            "type":"uint256"
-          },
-          {
-            "internalType":"uint256",
-            "name":"verificationGasLimit",
-            "type":"uint256"
-          },
-          {
-            "internalType":"uint256",
-            "name":"preVerificationGas",
-            "type":"uint256"
-          },
-          {
-            "internalType":"uint256",
-            "name":"maxFeePerGas",
-            "type":"uint256"
-          },
-          {
-            "internalType":"uint256",
-            "name":"maxPriorityFeePerGas",
-            "type":"uint256"
-          },
-          {
-            "internalType":"bytes",
-            "name":"paymasterAndData",
-            "type":"bytes"
-          },
-          {
-            "internalType":"bytes",
-            "name":"signature",
-            "type":"bytes"
-          }
-        ],
-        "internalType":"struct UserOperation",
-        "name":"userOp",
-        "type":"tuple"
-      },
-      {
-        "internalType":"bytes32",
-        "name":"userOpHash",
-        "type":"bytes32"
-      },
-      {
-        "internalType":"uint256",
-        "name":"missingAccountFunds",
-        "type":"uint256"
+        "name": "selector",
+        "type": "bytes4",
+        "internalType": "bytes4"
       }
-    ],
-    "name":"validateUserOp",
-    "outputs":[
-      {
-        "internalType":"uint256",
-        "name":"validationData",
-        "type":"uint256"
-      }
-    ],
-    "stateMutability":"nonpayable",
-    "type":"function"
+    ]
   },
   {
-    "stateMutability":"payable",
-    "type":"receive"
+    "type": "error",
+    "name": "Unauthorized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCallContext",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UpgradeFailed",
+    "inputs": []
   }
 ]

@@ -4,7 +4,7 @@ import { sign } from "viem/accounts";
 
 import { entryPointAddress } from "../../generated";
 import { encodeSignature } from "../../src/encode-signatures/secp256k1";
-import { getDataHash } from "../../src/encode-signatures/utils";
+import { getStorageHash } from "../../src/encode-signatures/utils";
 import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromBytes } from "../../src/keyspace";
 import { buildUserOp, Call, getUserOpHash } from "../../src/smart-wallet";
 import { client, chain, bundlerClient, keyspaceClient } from "./client";
@@ -45,7 +45,7 @@ export async function signAndWrap(
   const signature = await sign({ hash, privateKey });
   const publicKey = secp256k1.getPublicKey(privateKey.slice(2), false);
   const pk256 = serializePublicKeyFromBytes(publicKey);
-  const dataHash = getDataHash(pk256);
+  const dataHash = getStorageHash(pk256);
   const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashEcdsaAccount, dataHash);  return encodeSignature({
     signature,
     publicKey,
