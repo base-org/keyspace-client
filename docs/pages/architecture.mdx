@@ -4,13 +4,13 @@ title: Architecture
 
 # Architecture
 
-Keyspace is a minimal zero-knowledge rollup that settles on Ethereum. It's minimal in that it doesn't implement a zkEVM like most rollups. Instead, there are a few specific state changes defined by the rollup.
+Keyspace is a minimal zero-knowledge rollup that settles on Ethereum. It's minimal in that it does not implement a zkEVM like most rollups. Instead, there are a few specific state changes defined by the rollup.
 
 Keyspace's internal state is an [Indexed Merkle Tree](https://docs.aztec.network/aztec/concepts/storage/trees/indexed_merkle_tree), which allows brand new wallets to easily prove that they've never changed their keys so they aren't in the tree, and recovered wallets to prove the current configuration of their wallet. The root of this Merkle tree is managed by the `KeyStore` contract on L1, where state transitions are verified by SNARK proofs.
 
 ## Rollup Node
 
-The Keyspace node is derived from go-ethereum to monitor the L1 chain for activity in the KeyStore contract and respond to JSON RPC calls from [clients](/clients) requesting key changes. There currently is no gossip protocol between nodes, so the activity in the KeyStore contract is the only method for Keyspace nodes to communicate.
+The Keyspace node is derived from Go-Ethereum to monitor the L1 chain for activity in the KeyStore contract and respond to JSON-RPC calls from [clients](/clients) requesting key changes. There currently is no gossip protocol between nodes, so the activity in the KeyStore contract is the only method for Keyspace nodes to communicate.
 
 ## L1 KeyStore Contract
 
@@ -22,13 +22,13 @@ The sequencer generates a recursive batch proof that contains proofs of each cli
 
 ## L2 KeyStore Contract
 
-Cross-chain wallets and other applications integrate with Keyspace by reading from a local L2 KeyStore contract with the latest state from L1. The state is trustlessly synced from L1 using Merkle proofs of the L1 KeyStore contract's storage. (The state can also be trustlessly synced via deposit transactions from L1, but that currently costs more gas.) Currently, this syncing is performed by the Keyspace sequencer, but it can extracted and run independently of the sequencer.
+Cross-chain wallets and other applications integrate with Keyspace by reading from a local L2 KeyStore contract with the latest state from L1. The state is trustlessly synced from L1 using Merkle proofs of the L1 KeyStore contract's storage. (The state can also be trustlessly synced via deposit transactions from L1, but that currently costs more gas.) Currently, this syncing is performed by the Keyspace sequencer, but it can be extracted and run independently of the sequencer.
 
 :::note
-ERC 4337 wallets are not allowed to read storage outside their own contracts, which means that can't read from the L2 KeyStore contract without violating the requirements of the standard. Our current examples read from this storage anyway and rely on a non-compliant bundler to process their transactions. Upcoming work will implement an ERC 4337 aggregator to handle this storage read on behalf of all wallets.
+ERC 4337 wallets are not allowed to read storage outside their own contracts, which means that they can not read from the L2 KeyStore contract without violating the requirements of the standard. Our current examples read from this storage anyway and rely on a non-compliant bundler to process their transactions. Upcoming work will implement an ERC 4337 aggregator to handle this storage read on behalf of all wallets.
 :::
 
-## `Account` Circuits
+## Account Circuits
 
 Key changes are authenticated by [`Account` circuits](/authentication) that generate proofs that the key change is authorized. Integrators will typically use common circuits like an M-of-N multisignature circuit, but you're free to implement your own custom logic to handle key changes.
 
@@ -38,4 +38,4 @@ Key changes are authenticated by [`Account` circuits](/authentication) that gene
 
 ## Support Services
 
-To provide a better user experience, vendors can operate their own [support services](/web-services) that monitor changes to Keyspace's state and indexes the latest state of all of their wallets.
+To provide a better user experience, vendors can operate their own [support services](/web-services) that monitor changes to Keyspace's state and index the latest state of all of their wallets.
