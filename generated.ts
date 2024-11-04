@@ -307,6 +307,485 @@ export const accountFactoryConfig = {
 } as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// AnchorStateRegistry
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const anchorStateRegistryAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      {
+        name: '_disputeGameFactory',
+        internalType: 'contract IDisputeGameFactory',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'error', inputs: [], name: 'InvalidGameStatus' },
+  { type: 'error', inputs: [], name: 'Unauthorized' },
+  { type: 'error', inputs: [], name: 'UnregisteredGame' },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'version', internalType: 'uint8', type: 'uint8', indexed: false },
+    ],
+    name: 'Initialized',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'GameType', type: 'uint32' }],
+    name: 'anchors',
+    outputs: [
+      { name: 'root', internalType: 'Hash', type: 'bytes32' },
+      { name: 'l2BlockNumber', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'disputeGameFactory',
+    outputs: [
+      {
+        name: '',
+        internalType: 'contract IDisputeGameFactory',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_startingAnchorRoots',
+        internalType: 'struct AnchorStateRegistry.StartingAnchorRoot[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'gameType', internalType: 'GameType', type: 'uint32' },
+          {
+            name: 'outputRoot',
+            internalType: 'struct OutputRoot',
+            type: 'tuple',
+            components: [
+              { name: 'root', internalType: 'Hash', type: 'bytes32' },
+              {
+                name: 'l2BlockNumber',
+                internalType: 'uint256',
+                type: 'uint256',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: '_superchainConfig',
+        internalType: 'contract SuperchainConfig',
+        type: 'address',
+      },
+    ],
+    name: 'initialize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: '_game',
+        internalType: 'contract IFaultDisputeGame',
+        type: 'address',
+      },
+    ],
+    name: 'setAnchorState',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'superchainConfig',
+    outputs: [
+      { name: '', internalType: 'contract SuperchainConfig', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'tryUpdateAnchorState',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'version',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+] as const
+
+export const anchorStateRegistryAddress =
+  '0x4C8BA32A5DAC2A720bb35CeDB51D6B067D104205' as const
+
+export const anchorStateRegistryConfig = {
+  address: anchorStateRegistryAddress,
+  abi: anchorStateRegistryAbi,
+} as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// BridgedKeystore
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const bridgedKeystoreAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      {
+        name: 'anchorStateRegistry_',
+        internalType: 'address',
+        type: 'address',
+      },
+      { name: 'keystore_', internalType: 'address', type: 'address' },
+      { name: 'refChainId_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'id', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'activeForks',
+    outputs: [{ name: 'activeFork', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'anchorStateRegistry',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'valueHash', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'confirmedValueHashStorageProof',
+        internalType: 'bytes[]',
+        type: 'bytes[]',
+      },
+    ],
+    name: 'isValueHashCurrent',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'keystore',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'keystoreStorageRoot',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'l1BlockNumber',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'confirmedValueHashStorageProof',
+        internalType: 'bytes[]',
+        type: 'bytes[]',
+      },
+      {
+        name: 'currentValueHashPreimages',
+        internalType: 'struct ValueHashPreimages',
+        type: 'tuple',
+        components: [
+          { name: 'controller', internalType: 'address', type: 'address' },
+          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'newValueHash', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'newValueHashPreimages',
+        internalType: 'struct ValueHashPreimages',
+        type: 'tuple',
+        components: [
+          { name: 'controller', internalType: 'address', type: 'address' },
+          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'l1BlockData', internalType: 'bytes', type: 'bytes' },
+      {
+        name: 'controllerProofs',
+        internalType: 'struct ControllerProofs',
+        type: 'tuple',
+        components: [
+          { name: 'updateProof', internalType: 'bytes', type: 'bytes' },
+          { name: 'updatedValueProof', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+    ],
+    name: 'preconfirmUpdate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'confirmedValueHashStorageProof',
+        internalType: 'bytes[]',
+        type: 'bytes[]',
+      },
+      {
+        name: 'confirmedValueHashPreimages',
+        internalType: 'struct ValueHashPreimages',
+        type: 'tuple',
+        components: [
+          { name: 'controller', internalType: 'address', type: 'address' },
+          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'newValueHash', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'newValueHashPreimages',
+        internalType: 'struct ValueHashPreimages',
+        type: 'tuple',
+        components: [
+          { name: 'controller', internalType: 'address', type: 'address' },
+          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'conflictingIndex', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'conflictingValueHashPreimages',
+        internalType: 'struct ValueHashPreimages',
+        type: 'tuple',
+        components: [
+          { name: 'controller', internalType: 'address', type: 'address' },
+          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'l1BlockData', internalType: 'bytes', type: 'bytes' },
+      {
+        name: 'controllerProofs',
+        internalType: 'struct ControllerProofs',
+        type: 'tuple',
+        components: [
+          { name: 'updateProof', internalType: 'bytes', type: 'bytes' },
+          { name: 'updatedValueProof', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+    ],
+    name: 'preconfirmUpdateWithFork',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'fork', internalType: 'uint256', type: 'uint256' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'preconfirmedValueHashes',
+    outputs: [
+      { name: 'valueHashes', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'refChainId',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'keystoreStorageRootProof',
+        internalType: 'struct KeystoreStorageRootProof',
+        type: 'tuple',
+        components: [
+          { name: 'l1BlockHeaderRlp', internalType: 'bytes', type: 'bytes' },
+          {
+            name: 'l1BlockHashProof',
+            internalType: 'struct L1BlockHashProof',
+            type: 'tuple',
+            components: [
+              {
+                name: 'proofType',
+                internalType: 'enum L1ProofType',
+                type: 'uint8',
+              },
+              { name: 'proofData', internalType: 'bytes', type: 'bytes' },
+            ],
+          },
+          {
+            name: 'anchorStateRegistryAccountProof',
+            internalType: 'bytes[]',
+            type: 'bytes[]',
+          },
+          {
+            name: 'anchorStateRegistryStorageProof',
+            internalType: 'bytes[]',
+            type: 'bytes[]',
+          },
+          {
+            name: 'keystoreAccountProof',
+            internalType: 'bytes[]',
+            type: 'bytes[]',
+          },
+          { name: 'l2StateRoot', internalType: 'bytes32', type: 'bytes32' },
+          {
+            name: 'l2MessagePasserStorageRoot',
+            internalType: 'bytes32',
+            type: 'bytes32',
+          },
+          { name: 'l2BlockHash', internalType: 'bytes32', type: 'bytes32' },
+        ],
+      },
+    ],
+    name: 'syncKeystoreStorageRoot',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'id', internalType: 'bytes32', type: 'bytes32', indexed: false },
+      {
+        name: 'newValueHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: false,
+      },
+    ],
+    name: 'KeystoreRecordUpdatePreconfirmed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'keystoreStorageRoot',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: false,
+      },
+      {
+        name: 'l1BlockNumber',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'KeystoreRootSynchronized',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'l1Blockhash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'expectedL1BlockHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'BlockHashMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'blockHeaderHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'blockHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'InvalidBlockHeader',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'confirmedNonce', internalType: 'uint256', type: 'uint256' },
+      { name: 'preconfirmedNonce', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'InvalidConflictingNonce',
+  },
+  { type: 'error', inputs: [], name: 'InvalidL2OutputRootPreimages' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'currentNonce', internalType: 'uint256', type: 'uint256' },
+      { name: 'newNonce', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'InvalidNonce',
+  },
+  { type: 'error', inputs: [], name: 'InvalidUpdate' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'provenL1BlockNumber', internalType: 'uint256', type: 'uint256' },
+      {
+        name: 'provingL1BlockNumber',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+    ],
+    name: 'KeystoreStorageRootProofStale',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'commonValueHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'NoValueHashConflict',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'valueHash', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'valueHashFromPreimages',
+        internalType: 'bytes32',
+        type: 'bytes32',
+      },
+    ],
+    name: 'RecordValueMismatch',
+  },
+  { type: 'error', inputs: [], name: 'UnauthorizedUpdate' },
+] as const
+
+export const bridgedKeystoreAddress =
+  '0x65C1Cf5a8c14D7C787aD32ffFEDD8a1062c0B050' as const
+
+export const bridgedKeystoreConfig = {
+  address: bridgedKeystoreAddress,
+  abi: bridgedKeystoreAbi,
+} as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // EntryPoint
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1015,4 +1494,219 @@ export const entryPointAddress =
 export const entryPointConfig = {
   address: entryPointAddress,
   abi: entryPointAbi,
+} as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Keystore
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const keystoreAbi = [
+  {
+    type: 'function',
+    inputs: [{ name: 'id', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'records',
+    outputs: [{ name: 'valueHash', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'currentValueHashPreimages',
+        internalType: 'struct ValueHashPreimages',
+        type: 'tuple',
+        components: [
+          { name: 'controller', internalType: 'address', type: 'address' },
+          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'newValueHash', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'newValueHashPreimages',
+        internalType: 'struct ValueHashPreimages',
+        type: 'tuple',
+        components: [
+          { name: 'controller', internalType: 'address', type: 'address' },
+          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'l1BlockData', internalType: 'bytes', type: 'bytes' },
+      {
+        name: 'controllerProofs',
+        internalType: 'struct ControllerProofs',
+        type: 'tuple',
+        components: [
+          { name: 'updateProof', internalType: 'bytes', type: 'bytes' },
+          { name: 'updatedValueProof', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+    ],
+    name: 'set',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'id', internalType: 'bytes32', type: 'bytes32', indexed: false },
+      {
+        name: 'newValueHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: false,
+      },
+    ],
+    name: 'KeystoreRecordSet',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'l1Blockhash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'expectedL1BlockHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'BlockHashMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'blockHeaderHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'blockHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'InvalidBlockHeader',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'currentNonce', internalType: 'uint256', type: 'uint256' },
+      { name: 'newNonce', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'InvalidNonce',
+  },
+  { type: 'error', inputs: [], name: 'InvalidUpdate' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'valueHash', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'valueHashFromPreimages',
+        internalType: 'bytes32',
+        type: 'bytes32',
+      },
+    ],
+    name: 'RecordValueMismatch',
+  },
+  { type: 'error', inputs: [], name: 'UnauthorizedUpdate' },
+] as const
+
+export const keystoreAddress =
+  '0x8346284b016A22d23EbA31966cffc05b617DC32A' as const
+
+export const keystoreConfig = {
+  address: keystoreAddress,
+  abi: keystoreAbi,
+} as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// L1Block
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const l1BlockAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'DEPOSITOR_ACCOUNT',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'basefee',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'batcherHash',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'hash',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'l1FeeOverhead',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'l1FeeScalar',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'number',
+    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'sequenceNumber',
+    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_number', internalType: 'uint64', type: 'uint64' },
+      { name: '_timestamp', internalType: 'uint64', type: 'uint64' },
+      { name: '_basefee', internalType: 'uint256', type: 'uint256' },
+      { name: '_hash', internalType: 'bytes32', type: 'bytes32' },
+      { name: '_sequenceNumber', internalType: 'uint64', type: 'uint64' },
+      { name: '_batcherHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: '_l1FeeOverhead', internalType: 'uint256', type: 'uint256' },
+      { name: '_l1FeeScalar', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'setL1BlockValues',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'timestamp',
+    outputs: [{ name: '', internalType: 'uint64', type: 'uint64' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'version',
+    outputs: [{ name: '', internalType: 'string', type: 'string' }],
+    stateMutability: 'view',
+  },
+] as const
+
+export const l1BlockAddress =
+  '0x4200000000000000000000000000000000000015' as const
+
+export const l1BlockConfig = {
+  address: l1BlockAddress,
+  abi: l1BlockAbi,
 } as const

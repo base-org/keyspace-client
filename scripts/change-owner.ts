@@ -4,7 +4,6 @@ import { defaultToEnv } from "./lib/argparse";
 import { ECDSA } from "../src/encode-signatures/secp256k1";
 import { changeOwnerSecp256k1, changeOwnerWebAuthn } from "../src/keyspace";
 import { vkHashEcdsaAccount } from "./lib/secp256k1";
-import { keyspaceClient, recoveryClient } from "./lib/client";
 import { authenticatorData } from "./lib/webauthn";
 const ECDSA = require("ecdsa-secp256r1");
 
@@ -14,7 +13,7 @@ function main() {
     description: "Change owner of a keyspace key",
   });
 
-  parser.add_argument("--keyspace-key", {
+  parser.add_argument("--keystore-id", {
     help: "The keyspace key to change owner of",
     ...defaultToEnv("KEYSPACE_KEY"),
   });
@@ -34,7 +33,7 @@ function main() {
   const args = parser.parse_args();
   if (args.signature_type === "secp256k1") {
     changeOwnerSecp256k1({
-      keyspaceKey: args.keyspace_key,
+      keyspaceKey: args.keystore_id,
       currentPrivateKey: args.private_key,
       newPrivateKey: args.new_private_key,
       vkHash: vkHashEcdsaAccount,
@@ -45,7 +44,7 @@ function main() {
     const currentPrivateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
     const newPrivateKey = ECDSA.fromJWK(JSON.parse(args.new_private_key));
     changeOwnerWebAuthn({
-      keyspaceKey: args.keyspace_key,
+      keyspaceKey: args.keystore_id,
       currentPrivateKey,
       newPrivateKey,
       vkHash: vkHashEcdsaAccount,

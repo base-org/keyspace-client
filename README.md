@@ -55,7 +55,7 @@ bun run scripts/send-eth.ts
 
 | Argument | Environment Variable | Description |
 | --- | --- | --- |
-| --keyspace-key | KEYSPACE_KEY | The wallet's Keyspace key |
+| --keystore-id | KEYSPACE_KEY | The wallet's Keyspace key |
 | --private-key | PRIVATE_KEY | secp256k1 private key or P256 JWK |
 | --signature-type | | secp256k1 (default) or webauthn |
 
@@ -69,7 +69,7 @@ bun run scripts/change-owner.ts
 
 | Argument | Environment Variable | Description |
 | --- | --- | --- |
-| --keyspace-key | KEYSPACE_KEY | The wallet's Keyspace key |
+| --keystore-id | KEYSPACE_KEY | The wallet's Keyspace key |
 | --private-key | PRIVATE_KEY | secp256k1 private key or P256 JWK |
 | --new-private-key | NEW_PRIVATE_KEY | new secp256k1 private key or P256 JWK |
 | --signature-type | | secp256k1 (default) or webauthn |
