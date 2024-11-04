@@ -3,13 +3,10 @@ import { defaultToEnv } from "./lib/argparse";
 import { getKeystoreID } from "../src/keyspace";
 import { getStorageHashForPrivateKey as getStorageHashForSecp256k1PrivateKey } from "../src/encode-signatures/secp256k1";
 import { getStorageHashForPrivateKey as getStorageHashForWebAuthnPrivateKey } from "../src/encode-signatures/webauthn";
-import { vkHashEcdsaAccount } from "./lib/secp256k1";
 import { client } from "./lib/client";
-import { getAddress } from "../src/smart-wallet";
+import { getAddress, controllerAddress } from "../src/smart-wallet";
 import { Hex } from "viem";
 const ECDSA = require("ecdsa-secp256r1");
-
-const controllerAddress = "0xE534140A4cbBDFEc4CC4ad8fdec707DCea8bB0C5";
 
 async function main() {
   const parser = new ArgumentParser({

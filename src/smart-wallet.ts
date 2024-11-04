@@ -8,30 +8,31 @@ import { buildDummySignature as buildDummyWebAuthn } from "./encode-signatures/w
 export const PASSKEY_OWNER_DUMMY_SIGNATURE: Hex =
   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000170000000000000000000000000000000000000000000000000000000000000001949fc7c88032b9fcb5f6efc7a7b8c63668eae9871b765e23123bb473ff57aa831a7c0d9276168ebcc29f2875a0239cffdf2a9cd1c2007c5c77c071db9264df1d000000000000000000000000000000000000000000000000000000000000002549960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008a7b2274797065223a22776562617574686e2e676574222c226368616c6c656e6765223a2273496a396e6164474850596759334b7156384f7a4a666c726275504b474f716d59576f4d57516869467773222c226f726967696e223a2268747470733a2f2f7369676e2e636f696e626173652e636f6d222c2263726f73734f726967696e223a66616c73657d00000000000000000000000000000000000000000000";
 
+export const controllerAddress = "0xE534140A4cbBDFEc4CC4ad8fdec707DCea8bB0C5";
+
 export async function buildUserOp(
   client: PublicClient,
   {
-    account,
-    ksKey,
-    ksKeyType,
+    controller,
+    storageHash,
     calls,
     paymasterAndData = "0x",
     signatureType,
   }: {
-    account: Address;
-    ksKey: Hex;
-    ksKeyType: number;
+    controller: Address;
+    storageHash: Hex;
     calls: Call[];
     paymasterAndData: Hex;
     signatureType: "secp256k1" | "webauthn";
   },
 ): Promise<UserOperation> {
   let initCode: Hex = "0x";
+  const account = await getAddress(client, { controller, storageHash, nonce: 0n });
   const code = await getBytecode(client, { address: account });
   if (!code) {
     initCode = getInitCode({
-      ksKey,
-      ksKeyType,
+      controller,
+      storageHash,
       nonce: 0n,
     });
   }
@@ -43,6 +44,8 @@ export async function buildUserOp(
     args: [account, 0n],
   });
   let maxFeesPerGas = await estimateFeesPerGas(client);
+  maxFeesPerGas.maxFeePerGas += 1000000n
+  maxFeesPerGas.maxPriorityFeePerGas += 1000000n
 
   const dummySigFunc = signatureType === "secp256k1" ? buildDummySecp256k1 : buildDummyWebAuthn;
   const signature = dummySigFunc();
@@ -83,29 +86,37 @@ export async function buildUserOp(
   };
 }
 
-export function getInitCode({ ksKey, ksKeyType, nonce }: { ksKey: Hex; ksKeyType: number; nonce: bigint }): Hex {
+export function getInitCode({
+  controller,
+  storageHash,
+  nonce,
+}: {
+  controller: Address;
+  storageHash: Hex;
+  nonce: bigint;
+}): Hex {
   return `${accountFactoryAddress}${
     createAccountCalldata({
-      ksKey,
-      ksKeyType,
+      controller,
+      storageHash,
       nonce,
     }).slice(2)
   }`;
 }
 
 export function createAccountCalldata({
-  ksKey,
-  ksKeyType,
+  controller,
+  storageHash,
   nonce,
 }: {
-  ksKey: Hex;
-  ksKeyType: number;
+  controller: Address;
+  storageHash: Hex;
   nonce: bigint;
 }) {
   return encodeFunctionData({
     abi: accountFactoryAbi,
     functionName: "createAccount",
-    args: [fromHex(ksKey, "bigint"), ksKeyType, nonce],
+    args: [controller, storageHash, nonce],
   });
 }
 
@@ -190,4 +201,19 @@ export function getUserOpHash({
     [hashedUserOp, entryPointAddress, chainId],
   );
   return keccak256(encodedWithChainAndEntryPoint);
+}
+
+export function wrapSignature(ownerIndex: bigint, signature: Hex): Hex {
+  return encodeAbiParameters(
+    [{
+      components: [
+        { name: "ownerIndex", type: "uint256" },
+        { name: "signatureData", type: "bytes" },
+      ],
+      type: "tuple",
+    }], [{
+      ownerIndex,
+      signatureData: signature,
+    }]
+  );
 }

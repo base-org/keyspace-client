@@ -6,10 +6,12 @@ import {
   toHex,
   fromHex,
   Address,
+  signatureToCompactSignature,
 } from "viem";
 import { SignReturnType } from "viem/accounts";
-import { getKeystoreID, getPublicKeyPoint, serializePublicKeyFromPrivateKey } from "../keyspace";
-import { dummyConfigProof, getStorageHash } from "./utils";
+import { getKeystoreID, getPublicKeyPoint, serializePublicKeyFromBytes, serializePublicKeyFromPrivateKey } from "../keyspace";
+import { dummyConfigProof, getStorage, getStorageHash } from "./utils";
+import { wrapSignature } from "../smart-wallet";
 
 
 export function buildDummySignature() {
@@ -22,7 +24,7 @@ export function buildDummySignature() {
       v: 0n,
     },
     publicKey: dummyPublicKey,
-    configProof: dummyConfigProof,
+    confirmedValueHashStorageProof: [],
   });
 }
 
@@ -43,32 +45,42 @@ export function encodePackedSignature(signature: SignReturnType): Hex {
 export function encodeSignature({
   signature,
   publicKey,
-  configProof,
+  confirmedValueHashStorageProof,
 }: {
   signature: SignReturnType;
   publicKey: Uint8Array;
-  configProof: Hex;
+  confirmedValueHashStorageProof: Hex[];
 }): Hex {
-  const publicKeyPoint = getPublicKeyPoint(publicKey);
-  return encodeAbiParameters([
-    { name: "sig", type: "bytes" },
-    { name: "publicKeyX", type: "uint256" },
-    { name: "publicKeyY", type: "uint256" },
-    { name: "stateProof", type: "bytes" },
-  ], [
-    encodePackedSignature(signature),
-    hexToBigInt("0x" + Buffer.from(publicKeyPoint.x).toString("hex") as Hex),
-    hexToBigInt("0x" + Buffer.from(publicKeyPoint.y).toString("hex") as Hex),
-    configProof,
-  ])
+  const signatureWrapper = wrapSignature(0n, encodePackedSignature(signature));
+  const ownerBytes = serializePublicKeyFromBytes(publicKey);
+  const recordData = getStorage(ownerBytes);
+  console.log(`sig = ${signatureWrapper}`);
+  console.log(`recordData = ${recordData}`);
+  console.log(`confirmedValueHashStorageProof = ${JSON.stringify(confirmedValueHashStorageProof, null, 2)}`);
+  const userOpSig = encodeAbiParameters([{
+    components: [
+      { name: "sig", type: "bytes" },
+      { name: "recordData", type: "bytes" },
+      { name: "confirmedValueHashStorageProof", type: "bytes[]" },
+      { name: "useAggregator", type: "bool" },
+    ],
+    type: "tuple",
+  }], [{
+    sig: signatureWrapper,
+    recordData,
+    confirmedValueHashStorageProof,
+    useAggregator: false,
+  }]);
+  console.log(`userOpSig = ${userOpSig}`);
+  return userOpSig;
 }
 
 export function getStorageHashForPrivateKey(privateKey: Hex): Hex {
-  const pk256 = serializePublicKeyFromPrivateKey(privateKey);
-  return getStorageHash(pk256);
+  const ownerBytes = serializePublicKeyFromPrivateKey(privateKey);
+  return getStorageHash(ownerBytes);
 }
 
-export function getKeyspaceKeyForPrivateKey(privateKey: Hex, controller: Address): Hex {
+export function getKeystoreIDForPrivateKey(privateKey: Hex, controller: Address): Hex {
   const storageHash = getStorageHashForPrivateKey(privateKey);
   return getKeystoreID(controller, storageHash);
 }

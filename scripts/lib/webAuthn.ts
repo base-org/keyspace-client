@@ -3,10 +3,10 @@ import { Hex } from "viem";
 import { entryPointAddress } from "../../generated";
 import { getStorageHash } from "../../src/encode-signatures/utils";
 import { encodeSignature } from "../../src/encode-signatures/webauthn";
-import { getAccount, getKeyspaceConfigProof, serializePublicKeyFromPoint } from "../../src/keyspace";
+import { getAccount, getConfirmedValueHashStorageProof, serializePublicKeyFromPoint } from "../../src/keyspace";
 import { p256WebAuthnSign } from "../../src/sign";
 import { buildUserOp, Call, getUserOpHash } from "../../src/smart-wallet";
-import { bundlerClient, chain, client, keyspaceClient } from "./client";
+import { bundlerClient, chain, client } from "./client";
 export const ECDSA = require("ecdsa-secp256r1");
 
 export type ECDSA = {
@@ -54,7 +54,7 @@ export async function signAndWrap(
   });
   const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
   const dataHash = getStorageHash(pk256);
-  const configProof = await getKeyspaceConfigProof(keyspaceClient, keyspaceKey, vkHashWebAuthnAccount, dataHash);
+  const configProof = await getConfirmedValueHashStorageProof(keyspaceClient, keyspaceKey, vkHashWebAuthnAccount, dataHash);
   return encodeSignature({
     signature,
     publicKey: {

@@ -3,6 +3,10 @@ import { Prettify } from "viem/chains";
 import { KeyspaceActions } from "../decorators/keyspace";
 import { RecoveryServiceActions } from "../decorators/recovery-service";
 
+export type GetRawHeaderParameters = {
+  blockNumberOrTag: Hex | "latest" | "earliest" | "pending";
+};  
+
 export type GetConfigProofParameters = {
   key: Hex;
   vkHash: Hash;
@@ -43,6 +47,12 @@ export type MKSRRpcSchema = RpcSchema & [{
   Method: "mksr_set";
   Parameters: [Hex, Hex, Hex, Hex, Hex];
   ReturnType: null;
+}];
+
+export type DebugRpcSchema = RpcSchema & [{
+  Method: "debug_getRawHeader";
+  Parameters: [Hex | "latest" | "earliest" | "pending"];
+  ReturnType: Hex;
 }];
 
 export type KeyspaceClient<

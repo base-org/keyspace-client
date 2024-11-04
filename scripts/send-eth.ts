@@ -1,24 +1,26 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "./lib/argparse";
-import { getAccount } from "../src/keyspace";
 import { Call } from "../src/smart-wallet";
 import * as keyspaceSecp256k1Base from "./lib/secp256k1";
 import * as keyspaceWebAuthnBase from "./lib/webauthn";
-import { client } from "./lib/client";
 const ECDSA = require("ecdsa-secp256r1");
 
 async function main() {
   const parser = new ArgumentParser({
-    description: "Change owner of a keyspace key",
+    description: "Send 1 wei",
   });
 
-  parser.add_argument("--keyspace-key", {
-    help: "The keyspace key to change owner of",
-    ...defaultToEnv("KEYSPACE_KEY"),
+  parser.add_argument("--keystore-id", {
+    help: "The keystore ID to change owner of",
+    ...defaultToEnv("KEYSTORE_ID"),
   });
   parser.add_argument("--private-key", {
     help: "The current private key of the owner",
     ...defaultToEnv("PRIVATE_KEY"),
+  });
+  parser.add_argument("--to", {
+    help: "The address to send to",
+    required: true,
   });
   parser.add_argument("--signature-type", {
     help: "The type of signature for the Keyspace key",
@@ -40,15 +42,14 @@ async function main() {
     console.error("Invalid circuit type");
   }
 
-  const to = await getAccount(client, args.keyspace_key, 0n, args.signature_type);
   const amount = 1n;
   const calls: Call[] = [{
     index: 0,
-    target: to,
+    target: args.to,
     data: "0x",
     value: amount,
   }];
-  baseModule.makeCalls(args.keyspace_key, privateKey, calls);
+  baseModule.makeCalls(args.keystore_id, privateKey, calls);
 }
 
 if (import.meta.main) {
