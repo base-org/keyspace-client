@@ -54,7 +54,7 @@ The user's `key` is defined as:
 key = poseidon_bn254(keccak256(original_vk) >> 8, keccak256(original_data) >> 8)
 ```
 
-This `key` is the key used for IMT exclusion / inclusion proofs.
+This `key` is the key used for IMT exclusion/inclusion proofs.
 
 :::info
 The `keccak256` hashes are right-shifted by `8` bits to ensure they fit within field elements (theoretically could shift by `3`, but `8` makes the in-circuit keccak slightly simpler by sticking to byte boundaries). This is also done below for other instances of `keccak256` hashes.
@@ -66,12 +66,12 @@ In order to generate constant-size verification keys and proofs for different ci
 
 ### Usage of `key` from wallets
 
-Users create a SCW that hardcodes their `key` as an immutable value. In order to validate the current state of `key`, the SCW signature validation logic could do the following (in the simple ECDSA case mentioned above):
+Users create a SCW that hardcodes their `key` as an immutable value. In order to validate the current state of the `key`, the SCW signature validation logic could do the following (in the simple ECDSA case mentioned above):
  - Require a `signature`, `publicKey`, and `stateProof` as inputs
  - Verify that the `signature` signs the expected data (e.g. the `userOpHash`) with a private key for `publicKey`
- - Verify that the `publicKey` passed is the current `value` in the IMT for the `key` hardcoded in the SCW, using a BN254 PLONK proof to verify IMT exclusion / inclusion (see [`State` circuit](#State-circuit)).
+ - Verify that the `publicKey` passed is the current `value` in the IMT for the `key` hardcoded in the SCW, using a BN254 PLONK proof to verify IMT exclusion/inclusion (see [`State` circuit](#State-circuit)).
 
-In order to make wallets immediately useable without waiting for keystore propagation, users can provide exclusion proofs, proving that nothing exists in the IMT for their `key`. If they have performed a recovery in the past, they will have to provide an inclusion proof, proving that the current `value` in the key matches the `publicKey` they passed (encoded in the `data` variable that is hashed to the `newKey` value stored in the IMT).
+In order to make wallets immediately usable without waiting for keystore propagation, users can provide exclusion proofs, proving that nothing exists in the IMT for their `key`. If they have performed a recovery in the past, they will have to provide an inclusion proof, proving that the current `value` in the key matches the `publicKey` they passed (encoded in the `data` variable that is hashed to the `newKey` value stored in the IMT).
 
 ### Recovery via rollup
 
@@ -98,7 +98,7 @@ txHash = uint256(keccak256(abi.encodePacked(
 ))) >> 8;
 ```
 
-This acts as an forced-inclusion / anti-censorship mechanism. When proving blocks, the `KeyStore` contract uses `txHash` as a public input to the proof verification. The prover must perform the same hashes in-circuit, therefore proving that each transaction was included in the same order. This makes the rollup a [based rollup](https://ethresear.ch/t/based-rollups-superpowers-from-l1-sequencing/15016).
+This acts as a forced-inclusion / anti-censorship mechanism. When proving blocks, the `KeyStore` contract uses `txHash` as a public input for proof verification. The prover must perform the same hashes in-circuit, thereby proving that each transaction was included in the same order. This makes the rollup a [based rollup](https://ethresear.ch/t/based-rollups-superpowers-from-l1-sequencing/15016).
 
 ### Contracts
 
@@ -172,7 +172,7 @@ We use BN254 for any proof verifications performed on the EVM, as Ethereum suppo
 
 We use BW6-761 as it forms a 2-chain with BLS12-377, making verification of BLS12-377 proofs efficient in BW6-761.
 
-A simpler design we explored early on used no recursion, and relied on users to submit BN254 proofs for recovery directly to the L1. However we deemed this a non-starter due to the high fees of recovery (2kb of calldata and 350k gas to verify a PLONK proof).
+A simpler design we explored early on used no recursion, and relied on users to submit BN254 proofs for recovery directly to the L1. However we deemed this a non-starter due to the high fees of recovery (2KB of calldata and 350k gas to verify a PLONK proof).
 :::
 
 There are 5 circuits involved in this design; 2 for each user's account ([`State`](#State-circuit), [`Account`](#Account-circuit)), and 3 specifically for the keystore ([`Hash`](#Hash-circuit), [`Batch`](#Batch-circuit), [`Update`](#Update-circuit)).
@@ -444,10 +444,10 @@ There must be some incentive for a prover to provide proofs for the rollup to be
 ### Trusted setup
 
 There are three trusted setups required for this proposal:
- - `BN254` KZG for the `Update` circuit (approx. 45m constraints)
+ - `BN254` KZG for the `Update` circuit (approximately 45m constraints)
      - We can likely reuse the Hermez trusted setup here
- - `BW6-671` KZG for the `Batch` circuit (approx. ? constraints)
- - `BLS12-377` KZG for the `Hash` + `Account` circuits (approx. 20m constraints)
+ - `BW6-671` KZG for the `Batch` circuit (approximately ? constraints)
+ - `BLS12-377` KZG for the `Hash` + `Account` circuits (approximately 20m constraints)
 
 We'll need Powers of Tau ceremonies for these, or rely on others (see some linked [here](https://github.com/Consensys/gnark/discussions/1014)).
 
@@ -472,9 +472,9 @@ Thus Alice can generate a counterfactual address for a SCW controlled by Bob's k
 ## Future improvements
 
 #### 4337 + PLONK proof enshrinement
-Currently there's still a pretty large gas cost for each SCW transaction for wallets that use the keystore. Verifying a PLONK proof is mostly compute gas which is generally cheap on L2s with blocks below their target gas (and therefore the base fee is low). However the proof size is ~1kb and calldata is the bulk of the cost of transactions on L2s. 4844 will help here, and we can do some aggregation of these proofs for multiple keystore txs in a bundle.
+Currently there's still a pretty large gas cost for each SCW transaction for wallets that use the keystore. Verifying a PLONK proof is mostly compute gas which is generally cheap on L2s with blocks below their target gas (and therefore the base fee is low). However the proof size is ~1KB and calldata is the bulk of the cost of transactions on L2s. 4844 will help here, and we can do some aggregation of these proofs for multiple keystore txs in a bundle.
 
 Any protocol improvements that reduce the cost of 4337 and/or PLONK verification would reduce fees further.
 
 #### Blob DA
-Right now all keystore rollup transactions are submitted as calldata to the L1 by the user or prover. We could reduce costs of transactions by submitting batches of transactions as 4844 blobs. Note however that this would increase the time-to-finality of the IMT root update for each transaction, as we have to wait for blobs to fill up before it makes sense to post and prove them.
+Right now all keystore rollup transactions are submitted as calldata to the L1 by the user or prover. We could reduce transaction costs by submitting batches of transactions as 4844 blobs. Note however that this would increase the time-to-finality of the IMT root update for each transaction, as we have to wait for blobs to fill up before it makes sense to post and prove them.
