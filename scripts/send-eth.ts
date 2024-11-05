@@ -1,8 +1,8 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "./lib/argparse";
 import { Call } from "../src/wallets/base-wallet/user-op";
-import * as keyspaceSecp256k1Base from "./lib/secp256k1";
-import * as keyspaceWebAuthnBase from "./lib/webauthn";
+import * as callsSecp256k1 from "../src/wallets/base-wallet/signers/secp256k1/calls";
+import * as callsWebAuthn from "../src/wallets/base-wallet/signers/webauthn/calls";
 const ECDSA = require("ecdsa-secp256r1");
 
 async function main() {
@@ -28,15 +28,15 @@ async function main() {
   });
 
   const args = parser.parse_args();
-  let baseModule: any;
+  let callsModule: any;
   let privateKey: any;
   if (args.signature_type === "secp256k1") {
     console.log("Using secp256k1 via keyspace...");
-    baseModule = keyspaceSecp256k1Base;
+    callsModule = callsSecp256k1;
     privateKey = args.private_key;
   } else if (args.signature_type === "webauthn") {
     console.log("Using WebAuthn via keyspace...");
-    baseModule = keyspaceWebAuthnBase;
+    callsModule = callsWebAuthn;
     privateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
   } else {
     console.error("Invalid circuit type");
@@ -49,7 +49,7 @@ async function main() {
     data: "0x",
     value: amount,
   }];
-  baseModule.makeCalls(args.keystore_id, privateKey, calls);
+  callsModule.makeCalls(args.keystore_id, privateKey, calls);
 }
 
 if (import.meta.main) {
