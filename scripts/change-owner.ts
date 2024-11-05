@@ -1,11 +1,10 @@
 import { ArgumentParser } from "argparse";
 
 import { defaultToEnv } from "./lib/argparse";
-import { ECDSA } from "../src/wallets/base-wallet/signers/secp256k1/signatures";
 import { changeOwnerSecp256k1, changeOwnerWebAuthn } from "../src/set-value";
 import { vkHashEcdsaAccount } from "../src/wallets/base-wallet/signers/secp256k1/calls";
 import { authenticatorData } from "../src/wallets/base-wallet/signers/webauthn/sign";
-const ECDSA = require("ecdsa-secp256r1");
+const P256 = require("ecdsa-secp256r1");
 
 
 function main() {
@@ -41,8 +40,8 @@ function main() {
       recoveryClient,
     });
   } else if (args.signature_type === "webauthn") {
-    const currentPrivateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
-    const newPrivateKey = ECDSA.fromJWK(JSON.parse(args.new_private_key));
+    const currentPrivateKey = P256.fromJWK(JSON.parse(args.private_key));
+    const newPrivateKey = P256.fromJWK(JSON.parse(args.new_private_key));
     changeOwnerWebAuthn({
       keyspaceKey: args.keystore_id,
       currentPrivateKey,

@@ -6,7 +6,7 @@ import { getStorageHashForPrivateKey as getStorageHashForWebAuthnPrivateKey } fr
 import { client } from "./lib/client";
 import { getAddress, controllerAddress } from "../src/wallets/base-wallet/user-op";
 import { Hex } from "viem";
-const ECDSA = require("ecdsa-secp256r1");
+const P256 = require("ecdsa-secp256r1");
 
 async function main() {
   const parser = new ArgumentParser({
@@ -27,7 +27,7 @@ async function main() {
   if (args.signature_type === "secp256k1") {
     storageHash = getStorageHashForSecp256k1PrivateKey(args.private_key);
   } else if (args.signature_type === "webauthn") {
-    const privateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
+    const privateKey = P256.fromJWK(JSON.parse(args.private_key));
     storageHash = getStorageHashForWebAuthnPrivateKey(privateKey);
   } else {
     console.error("Invalid circuit type");

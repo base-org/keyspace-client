@@ -1,3 +1,3 @@
-const ECDSA = require("ecdsa-secp256r1");
+const P256 = require("ecdsa-secp256r1");
 
-console.log(JSON.stringify(ECDSA.generateKey().toJWK()));
+console.log(JSON.stringify(P256.generateKey().toJWK()));

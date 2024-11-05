@@ -3,7 +3,7 @@ import { defaultToEnv } from "./lib/argparse";
 import { Call } from "../src/wallets/base-wallet/user-op";
 import * as callsSecp256k1 from "../src/wallets/base-wallet/signers/secp256k1/calls";
 import * as callsWebAuthn from "../src/wallets/base-wallet/signers/webauthn/calls";
-const ECDSA = require("ecdsa-secp256r1");
+const P256 = require("ecdsa-secp256r1");
 
 async function main() {
   const parser = new ArgumentParser({
@@ -37,7 +37,7 @@ async function main() {
   } else if (args.signature_type === "webauthn") {
     console.log("Using WebAuthn via keyspace...");
     callsModule = callsWebAuthn;
-    privateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
+    privateKey = P256.fromJWK(JSON.parse(args.private_key));
   } else {
     console.error("Invalid circuit type");
   }
