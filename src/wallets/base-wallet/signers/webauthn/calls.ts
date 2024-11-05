@@ -10,6 +10,16 @@ import { bundlerClient, chain, client } from "../../../../../scripts/lib/client"
 const jwk = JSON.parse(process.env.P256_JWK || "");
 export const p256PrivateKey: P256PrivateKey = P256.fromJWK(jwk);
 
+
+/**
+ * Creates and sends a Base Wallet user operation signed with a WebAuthn/P256 private key.
+ *
+ * @param keystoreID - The hexadecimal ID of the keystore.
+ * @param privateKey - The private key object used for signing.
+ * @param calls - An array of calls to be executed.
+ * @param paymasterData - Optional hexadecimal data for the paymaster. Defaults to "0x".
+ * @returns A promise of the user operation hash.
+ */
 export async function makeCalls(keystoreID: Hex, privateKey: P256PrivateKey, calls: Call[], paymasterData = "0x" as Hex) {
   const storageHash = getStorageHashForPrivateKey(privateKey);
   const op = await buildUserOp(client, {
