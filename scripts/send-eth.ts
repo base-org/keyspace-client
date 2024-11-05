@@ -1,6 +1,6 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "./lib/argparse";
-import { Call } from "../src/smart-wallet";
+import { Call } from "../src/wallets/base-wallet/user-op";
 import * as keyspaceSecp256k1Base from "./lib/secp256k1";
 import * as keyspaceWebAuthnBase from "./lib/webauthn";
 const ECDSA = require("ecdsa-secp256r1");

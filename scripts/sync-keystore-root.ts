@@ -1,6 +1,6 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "./lib/argparse";
-import { getKeystoreStorageRootProof } from "../src/keyspace";
+import { getKeystoreStorageRootProof } from "../src/proofs";
 import { client, l1Client, masterClient } from "./lib/client";
 import { createWalletClient, http } from "viem";
 import { bridgedKeystoreAbi, bridgedKeystoreAddress } from "../generated";

@@ -1,8 +1,8 @@
 import { ArgumentParser } from "argparse";
 
 import { defaultToEnv } from "./lib/argparse";
-import { ECDSA } from "../src/encode-signatures/secp256k1";
-import { changeOwnerSecp256k1, changeOwnerWebAuthn } from "../src/keyspace";
+import { ECDSA } from "../src/wallets/base-wallet/signers/secp256k1/signatures";
+import { changeOwnerSecp256k1, changeOwnerWebAuthn } from "../src/set-value";
 import { vkHashEcdsaAccount } from "./lib/secp256k1";
 import { authenticatorData } from "./lib/webauthn";
 const ECDSA = require("ecdsa-secp256r1");
