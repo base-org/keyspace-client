@@ -5,10 +5,15 @@ import {
   fromHex,
 } from "viem";
 import { SignReturnType } from "viem/accounts";
-import { serializePublicKeyFromBytes } from "./keys";
+import { serializePublicKeyFromBytes } from "./storage";
 import { encodeSignature, wrapSignature } from "../../user-op";
 
 
+/**
+ * Builds a dummy signature for estimating the gas cost of user operations.
+ *
+ * @returns {Uint8Array} The encoded dummy signature.
+ */
 export function buildDummySignature() {
   const dummyPublicKey = new Uint8Array(65);
   dummyPublicKey[0] = 4;
@@ -23,6 +28,12 @@ export function buildDummySignature() {
   });
 }
 
+/**
+ * Encodes a secp256k1 signature into the packed Hex value expected by the Base Wallet contracts.
+ *
+ * @param signature - The signature to encode.
+ * @returns The encoded signature.
+ */
 export function encodePackedSignature(signature: SignReturnType): Hex {
   return encodePacked(
     ["bytes32", "bytes32", "uint8"],

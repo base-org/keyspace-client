@@ -12,6 +12,18 @@ export const PASSKEY_OWNER_DUMMY_SIGNATURE: Hex =
 
 export const controllerAddress = "0xE534140A4cbBDFEc4CC4ad8fdec707DCea8bB0C5";
 
+/**
+ * Builds a UserOperation object for a given client and parameters.
+ *
+ * @param client - The PublicClient instance to interact with the blockchain.
+ * @param controller - The address of the controller.
+ * @param storageHash - The storage hash.
+ * @param calls - An array of Call objects representing the operations to be performed.
+ * @param paymasterAndData - The paymaster and data in hexadecimal format (default is "0x").
+ * @param signatureType - The type of signature to use ("secp256k1" or "webauthn").
+ * @returns A promise that resolves to a UserOperation object.
+ * @throws Will throw an error if the sender's balance is less than the required prefund.
+ */
 export async function buildUserOp(
   client: PublicClient,
   {
@@ -88,6 +100,14 @@ export async function buildUserOp(
   };
 }
 
+/**
+ * Generates the initcode for a Base Wallet to include with its first user operation.
+ *
+ * @param controller - The address of the controller.
+ * @param storageHash - The storage hash.
+ * @param nonce - The nonce value used to deploy a unique wallet.
+ * @returns The generated initialization code.
+ */
 export function getInitCode({
   controller,
   storageHash,
@@ -106,6 +126,14 @@ export function getInitCode({
   }`;
 }
 
+/**
+ * Generates the calldata for creating a Base Wallet.
+ *
+ * @param controller - The address of the controller.
+ * @param storageHash - The storage hash.
+ * @param nonce - The nonce value used to deploy a unique wallet.
+ * @returns The encoded function data for account creation.
+ */
 export function createAccountCalldata({
   controller,
   storageHash,
@@ -122,6 +150,15 @@ export function createAccountCalldata({
   });
 }
 
+/**
+ * Retrieves the address of the Base Wallet with the provided initial configuration.
+ *
+ * @param client - The public client instance used to interact with the blockchain.
+ * @param controller - The address of the controller.
+ * @param storageHash - The hash of the storage.
+ * @param nonce - The nonce value used to deploy a unique wallet.
+ * @returns The Base Wallet address.
+ */
 export async function getAddress<TChain extends Chain | undefined>(
   client: PublicClient<Transport, TChain>,
   { controller, storageHash, nonce }: { controller: Address; storageHash: Hex; nonce: bigint },
@@ -134,6 +171,12 @@ export async function getAddress<TChain extends Chain | undefined>(
   });
 }
 
+/**
+ * Builds the calldata for one or more calls to be executed via executeBatch.
+ *
+ * @param calls - An array of calls to be made by the user operation.
+ * @returns The encoded calldata for the user operation.
+ */
 export function buildUserOperationCalldata({ calls }: { calls: Call[] }): Hex {
   // sort ascending order, 0 first
   const _calls = calls.sort((a, b) => a.index - b.index);
@@ -151,6 +194,13 @@ export type Call = {
   data: Hex;
 };
 
+/**
+ * Computes the hash of a user operation.
+ *
+ * @param userOperation - The user operation object containing various fields.
+ * @param chainId - The chain ID that the user operation will be executed on.
+ * @returns The computed hash of the user operation.
+ */
 export function getUserOpHash({
   userOperation,
   chainId,
@@ -205,6 +255,13 @@ export function getUserOpHash({
   return keccak256(encodedWithChainAndEntryPoint);
 }
 
+/**
+ * Wraps a signature with index of the owner that signed it.
+ *
+ * @param ownerIndex - The index of the owner.
+ * @param signature - The signature to wrap.
+ * @returns The wrapped signature.
+ */
 export function wrapSignature(ownerIndex: bigint, signature: Hex): Hex {
   return encodeAbiParameters(
     [{
@@ -220,6 +277,16 @@ export function wrapSignature(ownerIndex: bigint, signature: Hex): Hex {
   );
 }
 
+
+/**
+ * Encodes the data expected within the signature field of a Base Wallet user operation.
+ *
+ * @param signatureWrapper
+ * @param ownerBytes - The owner's bytes in hexadecimal format.
+ * @param confirmedValueHashStorageProof - An MPT proof of the value hash at the latest confirmed
+ *        keystore storage root.
+ * @returns The encoded user operation signature as a hexadecimal string.
+ */
 export function encodeSignature({
   signatureWrapper, ownerBytes, confirmedValueHashStorageProof,
 }: {

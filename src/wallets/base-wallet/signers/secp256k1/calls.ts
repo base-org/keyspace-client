@@ -6,6 +6,15 @@ import { buildUserOp, Call, controllerAddress, getUserOpHash } from "../../user-
 import { client, chain, bundlerClient } from "../../../../../scripts/lib/client";
 import { signAndWrap } from "./sign";
 
+/**
+ * Creates and sends a Base Wallet user operation signed with an secp256k1 private key.
+ *
+ * @param keystoreID - The hexadecimal ID of the keystore.
+ * @param privateKey - The hexadecimal private key used for signing.
+ * @param calls - An array of calls to be executed.
+ * @param paymasterData - Optional hexadecimal data for the paymaster. Defaults to "0x".
+ * @returns A promise of the user operation hash.
+ */
 export async function makeCalls(keystoreID: Hex, privateKey: Hex, calls: Call[], paymasterData = "0x" as Hex) {
   const storageHash = getStorageHashForPrivateKey(privateKey);
   const op = await buildUserOp(client, {
@@ -31,5 +40,5 @@ export async function makeCalls(keystoreID: Hex, privateKey: Hex, calls: Call[],
     entryPoint: entryPointAddress,
   });
 
-  console.log("opHash", opHash);
+  return opHash;
 }
