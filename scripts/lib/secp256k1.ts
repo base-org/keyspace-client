@@ -3,11 +3,13 @@ import { Hex } from "viem";
 import { sign } from "viem/accounts";
 
 import { entryPointAddress } from "../../generated";
-import { encodeSignature, getStorageHashForPrivateKey } from "../../src/encode-signatures/secp256k1";
-import { getStorageHash } from "../../src/encode-signatures/utils";
-import { getAccount, getConfirmedValueHashStorageProof, serializePublicKeyFromBytes } from "../../src/keyspace";
-import { buildUserOp, Call, controllerAddress, getAddress, getUserOpHash } from "../../src/smart-wallet";
+import { encodePackedSignature } from "../../src/wallets/base-wallet/signers/secp256k1/signatures";
+import { getStorageHashForPrivateKey } from "../../src/wallets/base-wallet/signers/secp256k1/storage";
+import { encodeSignature, wrapSignature } from "../../src/wallets/base-wallet/user-op";
+import { getConfirmedValueHashStorageProof } from "../../src/proofs";
+import { buildUserOp, Call, controllerAddress, getUserOpHash } from "../../src/wallets/base-wallet/user-op";
 import { client, chain, bundlerClient, l1Client, masterClient } from "./client";
+import { serializePublicKeyFromBytes } from "../../src/wallets/base-wallet/signers/secp256k1/keys";
 
 export async function makeCalls(keystoreID: Hex, privateKey: Hex, calls: Call[], paymasterData = "0x" as Hex) {
   const storageHash = getStorageHashForPrivateKey(privateKey);
@@ -45,8 +47,8 @@ export async function signAndWrap(
   const confirmedValueHashStorageProof = await getConfirmedValueHashStorageProof(
     l1Client, masterClient, client, keystoreID);
   return encodeSignature({
-    signature,
-    publicKey,
+    signatureWrapper: wrapSignature(0n, encodePackedSignature(signature)),
+    ownerBytes: serializePublicKeyFromBytes(publicKey),
     confirmedValueHashStorageProof,
   });
 }
