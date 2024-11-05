@@ -95,7 +95,7 @@ export async function getKeystoreStorageRootProof(l1Client: DebugClient, masterC
   });
   const keystoreAccountProof = keystoreProof.accountProof;
 
-  const outputRootPreimage = await getOutputRootPreimage(masterClient, masterBlockNumber);
+  const outputRootPreimages = await getOutputRootPreimages(masterClient, masterBlockNumber);
 
   return {
     l1BlockHeaderRlp,
@@ -103,9 +103,9 @@ export async function getKeystoreStorageRootProof(l1Client: DebugClient, masterC
     anchorStateRegistryAccountProof,
     anchorStateRegistryStorageProof,
     keystoreAccountProof,
-    l2StateRoot: outputRootPreimage.stateRoot,
-    l2MessagePasserStorageRoot: outputRootPreimage.messagePasserStorageRoot,
-    l2BlockHash: outputRootPreimage.hash,
+    l2StateRoot: outputRootPreimages.stateRoot,
+    l2MessagePasserStorageRoot: outputRootPreimages.messagePasserStorageRoot,
+    l2BlockHash: outputRootPreimages.hash,
   };
 }
 type OPStackProofData = {
@@ -255,7 +255,7 @@ async function getAnchorStateRegistryProof(l1Client: PublicClient, l1BlockNumber
  * @param blockNumber - The block number for which to retrieve the output root preimage.
  * @returns An object containing the state root, block hash, and message passer storage root.
  */
-async function getOutputRootPreimage(client: PublicClient, blockNumber: bigint) {
+async function getOutputRootPreimages(client: PublicClient, blockNumber: bigint) {
   const messagePasserAddress = "0x4200000000000000000000000000000000000016";
   const messagePasserProof = await client.getProof({
     address: messagePasserAddress,
