@@ -1,13 +1,12 @@
 import { ArgumentParser } from "argparse";
 
 import { defaultToEnv } from "./lib/argparse";
-import { ECDSA } from "../src/encode-signatures/secp256k1";
+import { ECDSA as Secp256k1ECDSA } from "../src/encode-signatures/secp256k1"; // Renamed import
 import { changeOwnerSecp256k1, changeOwnerWebAuthn } from "../src/keyspace";
 import { vkHashEcdsaAccount } from "./lib/secp256k1";
 import { keyspaceClient, recoveryClient } from "./lib/client";
 import { authenticatorData } from "./lib/webauthn";
-const ECDSA = require("ecdsa-secp256r1");
-
+const Secp256r1ECDSA = require("ecdsa-secp256r1"); // Renamed import
 
 function main() {
   const parser = new ArgumentParser({
@@ -42,8 +41,8 @@ function main() {
       recoveryClient,
     });
   } else if (args.signature_type === "webauthn") {
-    const currentPrivateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
-    const newPrivateKey = ECDSA.fromJWK(JSON.parse(args.new_private_key));
+    const currentPrivateKey = Secp256r1ECDSA.fromJWK(JSON.parse(args.private_key)); // Updated
+    const newPrivateKey = Secp256r1ECDSA.fromJWK(JSON.parse(args.new_private_key)); // Updated
     changeOwnerWebAuthn({
       keyspaceKey: args.keyspace_key,
       currentPrivateKey,
