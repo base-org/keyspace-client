@@ -37,7 +37,7 @@ async function main() {
     baseModule = keyspaceWebAuthnBase;
     privateKey = ECDSA.fromJWK(JSON.parse(args.private_key));
   } else {
-    console.error("Invalid circuit type");
+    console.error("Invalid signature type");
   }
 
   const to = await getAccount(client, args.keyspace_key, 0n, args.signature_type);
