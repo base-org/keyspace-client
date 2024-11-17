@@ -58,6 +58,7 @@ export async function buildUserOp(
     args: [account, 0n],
   });
   let maxFeesPerGas = await estimateFeesPerGas(client);
+  // FIXME: Figure out what's wrong with the gas estimation so we don't have to pad the fees.
   maxFeesPerGas.maxFeePerGas += 1000000n
   maxFeesPerGas.maxPriorityFeePerGas += 1000000n
 
