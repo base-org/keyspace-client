@@ -1,11 +1,11 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "./lib/argparse";
-import { getInitialValueHash } from "../src/value-hash";
-import { getStorageHashForPrivateKey as getStorageHashForSecp256k1PrivateKey } from "../src/wallets/base-wallet/signers/secp256k1/storage";
-import { getStorageHashForPrivateKey as getStorageHashForWebAuthnPrivateKey } from "../src/wallets/base-wallet/signers/webauthn/storage";
+import { getConfigDataForPrivateKey as getConfigDataForSecp256k1PrivateKey } from "../src/wallets/base-wallet/signers/secp256k1/config-data";
+import { getConfigDataForPrivateKey as getConfigDataForWebAuthnPrivateKey } from "../src/wallets/base-wallet/signers/webauthn/config-data";
 import { client } from "./lib/client";
-import { getAddress, controllerAddress } from "../src/wallets/base-wallet/user-op";
+import { getAddressByHash } from "../src/wallets/base-wallet/user-op";
 import { Hex } from "viem";
+import { hashConfig } from "../src/config";
 const P256 = require("ecdsa-secp256r1");
 
 async function main() {
@@ -23,21 +23,20 @@ async function main() {
   });
 
   const args = parser.parse_args();
-  let storageHash;
+  let configData;
   if (args.signature_type === "secp256k1") {
-    storageHash = getStorageHashForSecp256k1PrivateKey(args.private_key);
+    configData = getConfigDataForSecp256k1PrivateKey(args.private_key);
   } else if (args.signature_type === "webauthn") {
     const privateKey = P256.fromJWK(JSON.parse(args.private_key));
-    storageHash = getStorageHashForWebAuthnPrivateKey(privateKey);
+    configData = getConfigDataForWebAuthnPrivateKey(privateKey);
   } else {
     console.error("Invalid circuit type");
   }
 
-  const keystoreID = getInitialValueHash(controllerAddress, storageHash as Hex);
-  console.log("Keystore ID:", keystoreID);
-  console.log("Account address:", await getAddress(client, {
-    controller: controllerAddress,
-    storageHash: storageHash as Hex,
+  const initialConfigHash = hashConfig(0n, configData as Hex);
+  console.log("Initial config hash", initialConfigHash);
+  console.log("Account address:", await getAddressByHash(client, {
+    initialConfigHash,
     nonce: 0n,
   }));
 }

@@ -38,9 +38,9 @@ touch .env
 
 ## Scripts
 
-### Get Keyspace Key
+### Get Account
 ```bash
-bun run scripts/get-keyspace-key.ts
+bun run scripts/get-account.ts
 ```
 
 | Argument | Environment Variable | Description |

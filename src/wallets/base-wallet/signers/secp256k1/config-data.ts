@@ -1,20 +1,17 @@
-import { type Hex, Address, encodeAbiParameters, keccak256 } from "viem";
-import { getInitialValueHash } from "../../../../value-hash";
-import { getStorageHash } from "../../storage";
+import { type Hex, encodeAbiParameters, keccak256 } from "viem";
+import { encodeConfigData } from "../../config";
 import { privateKeyToAccount } from "viem/accounts";
 
 
 /**
- * Generates a keystore storage hash for a given private key.
+ * Encodes the given private key as the raw bytes of the Base Wallet config data format.
  * 
- * The corresponding public key is serialized and hashed to generate the storage hash.
- *
- * @param privateKey - The private key in hexadecimal format.
- * @returns The storage hash in hexadecimal format.
+ * @param privateKey - The private key as a hex string.
+ * @returns The config data as a hex string.
  */
-export function getStorageHashForPrivateKey(privateKey: Hex): Hex {
+export function getConfigDataForPrivateKey(privateKey: Hex): Hex {
   const ownerBytes = serializePublicKeyFromPrivateKey(privateKey);
-  return getStorageHash(ownerBytes);
+  return encodeConfigData(ownerBytes);
 }
 
 /**

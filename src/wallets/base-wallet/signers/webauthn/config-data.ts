@@ -1,17 +1,16 @@
-import { Hex, toHex, Address } from "viem";
-import { getInitialValueHash } from "../../../../value-hash";
-import { getStorageHash } from "../../storage";
+import { Hex, toHex } from "viem";
+import { encodeConfigData } from "../../config";
 
 
 /**
- * Generates a storage hash for a given P256 private key.
+ * Encodes the given P256 private key as the raw bytes of the Base Wallet config data format.
  *
- * @param privateKey - The signer's private key. 
- * @returns The storage hash as a Hex string.
+ * @param privateKey - The P256 private key as a hex string.
+ * @returns The config data as a hex string.
  */
-export function getStorageHashForPrivateKey(privateKey: any): Hex {
+export function getConfigDataForPrivateKey(privateKey: any): Hex {
   const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
-  return getStorageHash(toHex(pk256));
+  return encodeConfigData(toHex(pk256));
 }
 
 /**

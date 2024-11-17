@@ -3,14 +3,9 @@
     "type": "constructor",
     "inputs": [
       {
-        "name": "keystore_",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "aggregator_",
-        "type": "address",
-        "internalType": "address"
+        "name": "masterChainId",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "nonpayable"
@@ -25,13 +20,13 @@
   },
   {
     "type": "function",
-    "name": "aggregator",
+    "name": "REPLAYABLE_NONCE_KEY",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "contract CoinbaseSmartWalletAggregator"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -54,6 +49,36 @@
       }
     ],
     "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "confirmConfig",
+    "inputs": [
+      {
+        "name": "newConfirmedConfig",
+        "type": "tuple",
+        "internalType": "struct ConfigLib.Config",
+        "components": [
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      },
+      {
+        "name": "keystoreProof",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -192,6 +217,82 @@
   },
   {
     "type": "function",
+    "name": "getUserOpHashWithoutChainId",
+    "inputs": [
+      {
+        "name": "userOp",
+        "type": "tuple",
+        "internalType": "struct UserOperation",
+        "components": [
+          {
+            "name": "sender",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "initCode",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "callData",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "callGasLimit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "verificationGasLimit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "preVerificationGas",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "maxFeePerGas",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "maxPriorityFeePerGas",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "paymasterAndData",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "signature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "implementation",
     "inputs": [],
     "outputs": [
@@ -208,13 +309,87 @@
     "name": "initialize",
     "inputs": [
       {
-        "name": "ksID",
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct ConfigLib.Config",
+        "components": [
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isOwnerAddress",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isOwnerBytes",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isOwnerPublicKey",
+    "inputs": [
+      {
+        "name": "x",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "y",
         "type": "bytes32",
         "internalType": "bytes32"
       }
     ],
-    "outputs": [],
-    "stateMutability": "payable"
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -242,29 +417,70 @@
   },
   {
     "type": "function",
-    "name": "keystore",
+    "name": "masterChainId",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "contract BridgedKeystore"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "keystoreID",
-    "inputs": [],
+    "name": "ownerAtIndex",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "outputs": [
       {
         "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "preconfirmConfig",
+    "inputs": [
+      {
+        "name": "confirmedConfigHashIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newConfig",
+        "type": "tuple",
+        "internalType": "struct ConfigLib.Config",
+        "components": [
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      },
+      {
+        "name": "authorizationProof",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -300,6 +516,36 @@
   },
   {
     "type": "function",
+    "name": "setConfig",
+    "inputs": [
+      {
+        "name": "newConfig",
+        "type": "tuple",
+        "internalType": "struct ConfigLib.Config",
+        "components": [
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      },
+      {
+        "name": "authorizationProof",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "upgradeToAndCall",
     "inputs": [
       {
@@ -315,6 +561,36 @@
     ],
     "outputs": [],
     "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "validateConfigUpdateHook",
+    "inputs": [
+      {
+        "name": "newConfig",
+        "type": "tuple",
+        "internalType": "struct ConfigLib.Config",
+        "components": [
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      },
+      {
+        "name": "authorizationProof",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -404,6 +680,51 @@
   },
   {
     "type": "event",
+    "name": "KeystoreConfigConfirmed",
+    "inputs": [
+      {
+        "name": "configHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "l1BlockTimestamp",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "KeystoreConfigPreconfirmed",
+    "inputs": [
+      {
+        "name": "configHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "KeystoreConfigSet",
+    "inputs": [
+      {
+        "name": "configHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Upgraded",
     "inputs": [
       {
@@ -417,8 +738,98 @@
   },
   {
     "type": "error",
-    "name": "Initialized",
+    "name": "BlockHashMismatch",
+    "inputs": [
+      {
+        "name": "l1Blockhash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "expectedL1BlockHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ConfirmedConfigHashNotFound",
+    "inputs": [
+      {
+        "name": "confirmedConfigHashIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "preConfirmedConfigHashAtIndex",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "expectedConfirmedConfigHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ConfirmedConfigOutdated",
+    "inputs": [
+      {
+        "name": "currentConfirmedConfigTimestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newConfirmedConfigTimestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ConfirmedConfigTooOld",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InitialNonceIsNotZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidBlockHeader",
+    "inputs": [
+      {
+        "name": "blockHeaderHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "blockHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidConfig",
+    "inputs": [
+      {
+        "name": "configHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "recomputedConfigHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
   },
   {
     "type": "error",
@@ -428,6 +839,27 @@
         "name": "owner",
         "type": "bytes",
         "internalType": "bytes"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidKeystoreConfigUpdate",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidL2OutputRootPreimages",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidNonceKey",
+    "inputs": [
+      {
+        "name": "key",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ]
   },
@@ -444,7 +876,33 @@
   },
   {
     "type": "error",
-    "name": "KeyspaceKeyTypeCantBeNone",
+    "name": "KeystoreAlreadyInitialized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NonceNotIncrementedByOne",
+    "inputs": [
+      {
+        "name": "currentNonce",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newNonce",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotOnMasterChain",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotOnReplicaChain",
     "inputs": []
   },
   {
@@ -466,6 +924,16 @@
   {
     "type": "error",
     "name": "UnauthorizedCallContext",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCaller",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedKeystoreConfigUpdate",
     "inputs": []
   },
   {

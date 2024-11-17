@@ -15,14 +15,9 @@
     "name": "createAccount",
     "inputs": [
       {
-        "name": "controller",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "storageHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "configData",
+        "type": "bytes",
+        "internalType": "bytes"
       },
       {
         "name": "nonce",
@@ -44,12 +39,31 @@
     "name": "getAddress",
     "inputs": [
       {
-        "name": "controller",
-        "type": "address",
-        "internalType": "address"
+        "name": "initialConfigData",
+        "type": "bytes",
+        "internalType": "bytes"
       },
       {
-        "name": "storageHash",
+        "name": "nonce",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAddressByHash",
+    "inputs": [
+      {
+        "name": "initialConfigHash",
         "type": "bytes32",
         "internalType": "bytes32"
       },
