@@ -5,7 +5,7 @@ import {
   fromHex,
 } from "viem";
 import { SignReturnType } from "viem/accounts";
-import { serializePublicKeyFromBytes } from "./storage";
+import { serializePublicKeyFromBytes } from "./config-data";
 import { encodeSignature, wrapSignature } from "../../user-op";
 
 

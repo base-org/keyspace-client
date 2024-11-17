@@ -1,8 +1,8 @@
 import { Hex } from "viem";
 
 import { entryPointAddress } from "../../../../../generated";
-import { getStorageHashForPrivateKey } from "./storage";
-import { buildUserOp, Call, controllerAddress, getUserOpHash } from "../../user-op";
+import { getConfigDataForPrivateKey } from "./config-data";
+import { buildUserOp, Call, getUserOpHash } from "../../user-op";
 import { client, chain, bundlerClient } from "../../../../../scripts/lib/client";
 import { signAndWrap } from "./sign";
 
@@ -15,14 +15,10 @@ import { signAndWrap } from "./sign";
  * @param paymasterData - Optional hexadecimal data for the paymaster. Defaults to "0x".
  * @returns A promise of the user operation hash.
  */
-export async function makeCalls(keystoreID: Hex, privateKey: Hex, calls: Call[], paymasterData = "0x" as Hex) {
-  const storageHash = getStorageHashForPrivateKey(privateKey);
+export async function makeCalls(privateKey: Hex, calls: Call[], paymasterData = "0x" as Hex) {
+  const initialConfigData = getConfigDataForPrivateKey(privateKey);
   const op = await buildUserOp(client, {
-    // FIXME: This should actually use the account address for the provided
-    // keystore ID, but the deployed CoinbaseSmartWallet implementation has a
-    // getAddress that doesn't take the keystore ID.
-    controller: controllerAddress,
-    storageHash,
+    initialConfigData,
     calls,
     paymasterAndData: paymasterData,
     signatureType: "secp256k1",
@@ -32,7 +28,7 @@ export async function makeCalls(keystoreID: Hex, privateKey: Hex, calls: Call[],
   op.signature = await signAndWrap({
     hash,
     privateKey,
-    keystoreID,
+    keystoreAddress: op.sender,
   });
 
   const opHash = await bundlerClient.sendUserOperation({

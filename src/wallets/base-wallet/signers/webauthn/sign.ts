@@ -1,5 +1,6 @@
 import { base64urlnopad } from "@scure/base";
 import {
+  Address,
   decodeAbiParameters, encodePacked,
   hexToBigInt,
   hexToBytes,
@@ -10,7 +11,7 @@ import {
 import { l1Client, masterClient, client } from "../../../../../scripts/lib/client";
 import { getConfirmedValueHashStorageProof } from "../../../../proofs";
 import { encodeSignature, wrapSignature } from "../../user-op";
-import { serializePublicKeyFromPoint } from "./storage";
+import { serializePublicKeyFromPoint } from "./config-data";
 import { encodeWebAuthnAuth } from "./signatures";
 
 export type P256PrivateKey = {
@@ -57,15 +58,16 @@ export function p256WebAuthnSign(
  * @returns A promise that resolves to the wrapped signature as a hex string.
  */
 export async function signAndWrap(
-  { hash, privateKey, keystoreID }: { hash: Hex; privateKey: P256PrivateKey; keystoreID: Hex; }
+  { hash, privateKey, keystoreAddress }: { hash: Hex; privateKey: P256PrivateKey; keystoreAddress: Address; }
 ): Promise<Hex> {
   const signature = await p256WebAuthnSign({
     challenge: hash,
     authenticatorData,
     p256PrivateKey: privateKey,
   });
+  // TODO: Update getConfirmedValueHashStorageProof to prove the correct slot in keystoreAddress's storage.
   const confirmedValueHashStorageProof = await getConfirmedValueHashStorageProof(
-    l1Client, masterClient, client, keystoreID);
+    l1Client, masterClient, client, keystoreAddress as Hex);
 
   return encodeSignature({
     signatureWrapper: wrapSignature(0n, encodeWebAuthnAuth(signature)),

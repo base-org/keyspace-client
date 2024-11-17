@@ -6,8 +6,7 @@ export const accountAbi = [
   {
     type: 'constructor',
     inputs: [
-      { name: 'keystore_', internalType: 'address', type: 'address' },
-      { name: 'aggregator_', internalType: 'address', type: 'address' },
+      { name: 'masterChainId', internalType: 'uint256', type: 'uint256' },
     ],
     stateMutability: 'nonpayable',
   },
@@ -16,14 +15,8 @@ export const accountAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'aggregator',
-    outputs: [
-      {
-        name: '',
-        internalType: 'contract CoinbaseSmartWalletAggregator',
-        type: 'address',
-      },
-    ],
+    name: 'REPLAYABLE_NONCE_KEY',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -34,6 +27,24 @@ export const accountAbi = [
     name: 'canSkipChainIdValidation',
     outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'newConfirmedConfig',
+        internalType: 'struct ConfigLib.Config',
+        type: 'tuple',
+        components: [
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'keystoreProof', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'confirmConfig',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -102,6 +113,44 @@ export const accountAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      {
+        name: 'userOp',
+        internalType: 'struct UserOperation',
+        type: 'tuple',
+        components: [
+          { name: 'sender', internalType: 'address', type: 'address' },
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'initCode', internalType: 'bytes', type: 'bytes' },
+          { name: 'callData', internalType: 'bytes', type: 'bytes' },
+          { name: 'callGasLimit', internalType: 'uint256', type: 'uint256' },
+          {
+            name: 'verificationGasLimit',
+            internalType: 'uint256',
+            type: 'uint256',
+          },
+          {
+            name: 'preVerificationGas',
+            internalType: 'uint256',
+            type: 'uint256',
+          },
+          { name: 'maxFeePerGas', internalType: 'uint256', type: 'uint256' },
+          {
+            name: 'maxPriorityFeePerGas',
+            internalType: 'uint256',
+            type: 'uint256',
+          },
+          { name: 'paymasterAndData', internalType: 'bytes', type: 'bytes' },
+          { name: 'signature', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+    ],
+    name: 'getUserOpHashWithoutChainId',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'implementation',
     outputs: [{ name: '$', internalType: 'address', type: 'address' }],
@@ -109,10 +158,44 @@ export const accountAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: 'ksID', internalType: 'bytes32', type: 'bytes32' }],
+    inputs: [
+      {
+        name: 'config',
+        internalType: 'struct ConfigLib.Config',
+        type: 'tuple',
+        components: [
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+    ],
     name: 'initialize',
     outputs: [],
-    stateMutability: 'payable',
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'isOwnerAddress',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'bytes', type: 'bytes' }],
+    name: 'isOwnerBytes',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'x', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'y', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'isOwnerPublicKey',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -127,18 +210,39 @@ export const accountAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'keystore',
-    outputs: [
-      { name: '', internalType: 'contract BridgedKeystore', type: 'address' },
-    ],
+    name: 'masterChainId',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    inputs: [],
-    name: 'keystoreID',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    inputs: [{ name: 'index', internalType: 'uint256', type: 'uint256' }],
+    name: 'ownerAtIndex',
+    outputs: [{ name: '', internalType: 'bytes', type: 'bytes' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'confirmedConfigHashIndex',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      {
+        name: 'newConfig',
+        internalType: 'struct ConfigLib.Config',
+        type: 'tuple',
+        components: [
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'authorizationProof', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'preconfirmConfig',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -157,12 +261,48 @@ export const accountAbi = [
   {
     type: 'function',
     inputs: [
+      {
+        name: 'newConfig',
+        internalType: 'struct ConfigLib.Config',
+        type: 'tuple',
+        components: [
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'authorizationProof', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'setConfig',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: 'newImplementation', internalType: 'address', type: 'address' },
       { name: 'data', internalType: 'bytes', type: 'bytes' },
     ],
     name: 'upgradeToAndCall',
     outputs: [],
     stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'newConfig',
+        internalType: 'struct ConfigLib.Config',
+        type: 'tuple',
+        components: [
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'authorizationProof', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'validateConfigUpdateHook',
+    outputs: [],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -211,6 +351,51 @@ export const accountAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'configHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'l1BlockTimestamp',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+    ],
+    name: 'KeystoreConfigConfirmed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'configHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+    ],
+    name: 'KeystoreConfigPreconfirmed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'configHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+    ],
+    name: 'KeystoreConfigSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'implementation',
         internalType: 'address',
         type: 'address',
@@ -219,18 +404,101 @@ export const accountAbi = [
     ],
     name: 'Upgraded',
   },
-  { type: 'error', inputs: [], name: 'Initialized' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'l1Blockhash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'expectedL1BlockHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'BlockHashMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      {
+        name: 'confirmedConfigHashIndex',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      {
+        name: 'preConfirmedConfigHashAtIndex',
+        internalType: 'bytes32',
+        type: 'bytes32',
+      },
+      {
+        name: 'expectedConfirmedConfigHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+      },
+    ],
+    name: 'ConfirmedConfigHashNotFound',
+  },
+  {
+    type: 'error',
+    inputs: [
+      {
+        name: 'currentConfirmedConfigTimestamp',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+      {
+        name: 'newConfirmedConfigTimestamp',
+        internalType: 'uint256',
+        type: 'uint256',
+      },
+    ],
+    name: 'ConfirmedConfigOutdated',
+  },
+  { type: 'error', inputs: [], name: 'ConfirmedConfigTooOld' },
+  { type: 'error', inputs: [], name: 'InitialNonceIsNotZero' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'blockHeaderHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'blockHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'InvalidBlockHeader',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'configHash', internalType: 'bytes32', type: 'bytes32' },
+      {
+        name: 'recomputedConfigHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+      },
+    ],
+    name: 'InvalidConfig',
+  },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
     name: 'InvalidEthereumAddressOwner',
+  },
+  { type: 'error', inputs: [], name: 'InvalidKeystoreConfigUpdate' },
+  { type: 'error', inputs: [], name: 'InvalidL2OutputRootPreimages' },
+  {
+    type: 'error',
+    inputs: [{ name: 'key', internalType: 'uint256', type: 'uint256' }],
+    name: 'InvalidNonceKey',
   },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
     name: 'InvalidOwnerBytesLength',
   },
-  { type: 'error', inputs: [], name: 'KeyspaceKeyTypeCantBeNone' },
+  { type: 'error', inputs: [], name: 'KeystoreAlreadyInitialized' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'currentNonce', internalType: 'uint256', type: 'uint256' },
+      { name: 'newNonce', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'NonceNotIncrementedByOne',
+  },
+  { type: 'error', inputs: [], name: 'NotOnMasterChain' },
+  { type: 'error', inputs: [], name: 'NotOnReplicaChain' },
   {
     type: 'error',
     inputs: [{ name: 'selector', internalType: 'bytes4', type: 'bytes4' }],
@@ -238,6 +506,8 @@ export const accountAbi = [
   },
   { type: 'error', inputs: [], name: 'Unauthorized' },
   { type: 'error', inputs: [], name: 'UnauthorizedCallContext' },
+  { type: 'error', inputs: [], name: 'UnauthorizedCaller' },
+  { type: 'error', inputs: [], name: 'UnauthorizedKeystoreConfigUpdate' },
   { type: 'error', inputs: [], name: 'UpgradeFailed' },
 ] as const
 
@@ -256,8 +526,7 @@ export const accountFactoryAbi = [
   {
     type: 'function',
     inputs: [
-      { name: 'controller', internalType: 'address', type: 'address' },
-      { name: 'storageHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'configData', internalType: 'bytes', type: 'bytes' },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'createAccount',
@@ -273,11 +542,20 @@ export const accountFactoryAbi = [
   {
     type: 'function',
     inputs: [
-      { name: 'controller', internalType: 'address', type: 'address' },
-      { name: 'storageHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'initialConfigData', internalType: 'bytes', type: 'bytes' },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'getAddress',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'initialConfigHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getAddressByHash',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
@@ -434,355 +712,6 @@ export const anchorStateRegistryAddress =
 export const anchorStateRegistryConfig = {
   address: anchorStateRegistryAddress,
   abi: anchorStateRegistryAbi,
-} as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// BridgedKeystore
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const bridgedKeystoreAbi = [
-  {
-    type: 'constructor',
-    inputs: [
-      {
-        name: 'anchorStateRegistry_',
-        internalType: 'address',
-        type: 'address',
-      },
-      { name: 'keystore_', internalType: 'address', type: 'address' },
-      { name: 'refChainId_', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'id', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'activeForks',
-    outputs: [{ name: 'activeFork', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'anchorStateRegistry',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'valueHash', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'confirmedValueHashStorageProof',
-        internalType: 'bytes[]',
-        type: 'bytes[]',
-      },
-    ],
-    name: 'isValueHashCurrent',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'keystore',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'keystoreStorageRoot',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'l1BlockNumber',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'confirmedValueHashStorageProof',
-        internalType: 'bytes[]',
-        type: 'bytes[]',
-      },
-      {
-        name: 'currentValueHashPreimages',
-        internalType: 'struct ValueHashPreimages',
-        type: 'tuple',
-        components: [
-          { name: 'controller', internalType: 'address', type: 'address' },
-          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'newValueHash', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'newValueHashPreimages',
-        internalType: 'struct ValueHashPreimages',
-        type: 'tuple',
-        components: [
-          { name: 'controller', internalType: 'address', type: 'address' },
-          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'l1BlockData', internalType: 'bytes', type: 'bytes' },
-      {
-        name: 'controllerProofs',
-        internalType: 'struct ControllerProofs',
-        type: 'tuple',
-        components: [
-          { name: 'updateProof', internalType: 'bytes', type: 'bytes' },
-          { name: 'updatedValueProof', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-    ],
-    name: 'preconfirmUpdate',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'confirmedValueHashStorageProof',
-        internalType: 'bytes[]',
-        type: 'bytes[]',
-      },
-      {
-        name: 'confirmedValueHashPreimages',
-        internalType: 'struct ValueHashPreimages',
-        type: 'tuple',
-        components: [
-          { name: 'controller', internalType: 'address', type: 'address' },
-          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'newValueHash', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'newValueHashPreimages',
-        internalType: 'struct ValueHashPreimages',
-        type: 'tuple',
-        components: [
-          { name: 'controller', internalType: 'address', type: 'address' },
-          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'conflictingIndex', internalType: 'uint256', type: 'uint256' },
-      {
-        name: 'conflictingValueHashPreimages',
-        internalType: 'struct ValueHashPreimages',
-        type: 'tuple',
-        components: [
-          { name: 'controller', internalType: 'address', type: 'address' },
-          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'l1BlockData', internalType: 'bytes', type: 'bytes' },
-      {
-        name: 'controllerProofs',
-        internalType: 'struct ControllerProofs',
-        type: 'tuple',
-        components: [
-          { name: 'updateProof', internalType: 'bytes', type: 'bytes' },
-          { name: 'updatedValueProof', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-    ],
-    name: 'preconfirmUpdateWithFork',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'fork', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'preconfirmedValueHashes',
-    outputs: [
-      { name: 'valueHashes', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'refChainId',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'keystoreStorageRootProof',
-        internalType: 'struct KeystoreStorageRootProof',
-        type: 'tuple',
-        components: [
-          { name: 'l1BlockHeaderRlp', internalType: 'bytes', type: 'bytes' },
-          {
-            name: 'l1BlockHashProof',
-            internalType: 'struct L1BlockHashProof',
-            type: 'tuple',
-            components: [
-              {
-                name: 'proofType',
-                internalType: 'enum L1ProofType',
-                type: 'uint8',
-              },
-              { name: 'proofData', internalType: 'bytes', type: 'bytes' },
-            ],
-          },
-          {
-            name: 'anchorStateRegistryAccountProof',
-            internalType: 'bytes[]',
-            type: 'bytes[]',
-          },
-          {
-            name: 'anchorStateRegistryStorageProof',
-            internalType: 'bytes[]',
-            type: 'bytes[]',
-          },
-          {
-            name: 'keystoreAccountProof',
-            internalType: 'bytes[]',
-            type: 'bytes[]',
-          },
-          { name: 'l2StateRoot', internalType: 'bytes32', type: 'bytes32' },
-          {
-            name: 'l2MessagePasserStorageRoot',
-            internalType: 'bytes32',
-            type: 'bytes32',
-          },
-          { name: 'l2BlockHash', internalType: 'bytes32', type: 'bytes32' },
-        ],
-      },
-    ],
-    name: 'syncKeystoreStorageRoot',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'id', internalType: 'bytes32', type: 'bytes32', indexed: false },
-      {
-        name: 'newValueHash',
-        internalType: 'bytes32',
-        type: 'bytes32',
-        indexed: false,
-      },
-    ],
-    name: 'KeystoreRecordUpdatePreconfirmed',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'keystoreStorageRoot',
-        internalType: 'bytes32',
-        type: 'bytes32',
-        indexed: false,
-      },
-      {
-        name: 'l1BlockNumber',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'KeystoreRootSynchronized',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'l1Blockhash', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'expectedL1BlockHash', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'BlockHashMismatch',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'blockHeaderHash', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'blockHash', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'InvalidBlockHeader',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'confirmedNonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'preconfirmedNonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'InvalidConflictingNonce',
-  },
-  { type: 'error', inputs: [], name: 'InvalidL2OutputRootPreimages' },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'currentNonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'newNonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'InvalidNonce',
-  },
-  { type: 'error', inputs: [], name: 'InvalidUpdate' },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'provenL1BlockNumber', internalType: 'uint256', type: 'uint256' },
-      {
-        name: 'provingL1BlockNumber',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-    ],
-    name: 'KeystoreStorageRootProofStale',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'commonValueHash', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'NoValueHashConflict',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'valueHash', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'valueHashFromPreimages',
-        internalType: 'bytes32',
-        type: 'bytes32',
-      },
-    ],
-    name: 'RecordValueMismatch',
-  },
-  { type: 'error', inputs: [], name: 'UnauthorizedUpdate' },
-] as const
-
-export const bridgedKeystoreAddress =
-  '0x65C1Cf5a8c14D7C787aD32ffFEDD8a1062c0B050' as const
-
-export const bridgedKeystoreConfig = {
-  address: bridgedKeystoreAddress,
-  abi: bridgedKeystoreAbi,
 } as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1494,120 +1423,6 @@ export const entryPointAddress =
 export const entryPointConfig = {
   address: entryPointAddress,
   abi: entryPointAbi,
-} as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Keystore
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const keystoreAbi = [
-  {
-    type: 'function',
-    inputs: [{ name: 'id', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'records',
-    outputs: [{ name: 'valueHash', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'id', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'currentValueHashPreimages',
-        internalType: 'struct ValueHashPreimages',
-        type: 'tuple',
-        components: [
-          { name: 'controller', internalType: 'address', type: 'address' },
-          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'newValueHash', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'newValueHashPreimages',
-        internalType: 'struct ValueHashPreimages',
-        type: 'tuple',
-        components: [
-          { name: 'controller', internalType: 'address', type: 'address' },
-          { name: 'nonce', internalType: 'uint96', type: 'uint96' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'l1BlockData', internalType: 'bytes', type: 'bytes' },
-      {
-        name: 'controllerProofs',
-        internalType: 'struct ControllerProofs',
-        type: 'tuple',
-        components: [
-          { name: 'updateProof', internalType: 'bytes', type: 'bytes' },
-          { name: 'updatedValueProof', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-    ],
-    name: 'set',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { name: 'id', internalType: 'bytes32', type: 'bytes32', indexed: false },
-      {
-        name: 'newValueHash',
-        internalType: 'bytes32',
-        type: 'bytes32',
-        indexed: false,
-      },
-    ],
-    name: 'KeystoreRecordSet',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'l1Blockhash', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'expectedL1BlockHash', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'BlockHashMismatch',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'blockHeaderHash', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'blockHash', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'InvalidBlockHeader',
-  },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'currentNonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'newNonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'InvalidNonce',
-  },
-  { type: 'error', inputs: [], name: 'InvalidUpdate' },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'valueHash', internalType: 'bytes32', type: 'bytes32' },
-      {
-        name: 'valueHashFromPreimages',
-        internalType: 'bytes32',
-        type: 'bytes32',
-      },
-    ],
-    name: 'RecordValueMismatch',
-  },
-  { type: 'error', inputs: [], name: 'UnauthorizedUpdate' },
-] as const
-
-export const keystoreAddress =
-  '0x8346284b016A22d23EbA31966cffc05b617DC32A' as const
-
-export const keystoreConfig = {
-  address: keystoreAddress,
-  abi: keystoreAbi,
 } as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

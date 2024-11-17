@@ -2,9 +2,9 @@ import { Hex } from "viem";
 const P256 = require("ecdsa-secp256r1");
 
 import { entryPointAddress } from "../../../../../generated";
-import { getStorageHashForPrivateKey } from "./storage";
+import { getConfigDataForPrivateKey } from "./config-data";
 import { P256PrivateKey, signAndWrap } from "./sign";
-import { buildUserOp, Call, controllerAddress, getUserOpHash } from "../../user-op";
+import { buildUserOp, Call, getUserOpHash } from "../../user-op";
 import { bundlerClient, chain, client } from "../../../../../scripts/lib/client";
 
 const jwk = JSON.parse(process.env.P256_JWK || "");
@@ -21,20 +21,16 @@ export const p256PrivateKey: P256PrivateKey = P256.fromJWK(jwk);
  * @returns A promise of the user operation hash.
  */
 export async function makeCalls(keystoreID: Hex, privateKey: P256PrivateKey, calls: Call[], paymasterData = "0x" as Hex) {
-  const storageHash = getStorageHashForPrivateKey(privateKey);
+  const initialConfigData = getConfigDataForPrivateKey(privateKey);
   const op = await buildUserOp(client, {
-    // FIXME: This should actually use the account address for the provided
-    // keystore ID, but the deployed CoinbaseSmartWallet implementation has a
-    // getAddress that doesn't take the keystore ID.
-    controller: controllerAddress,
-    storageHash,
+    initialConfigData,
     calls,
     paymasterAndData: paymasterData,
     signatureType: "webauthn",
   });
 
   const hash = getUserOpHash({ userOperation: op, chainId: BigInt(chain.id) });
-  op.signature = await signAndWrap({ hash, privateKey, keystoreID });
+  op.signature = await signAndWrap({ hash, privateKey, keystoreAddress: op.sender });
 
   const opHash = await bundlerClient.sendUserOperation({
     userOperation: op,
