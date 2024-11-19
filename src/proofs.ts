@@ -1,82 +1,23 @@
-import { PublicClient, type Hex, keccak256, encodeAbiParameters, toHex, toRlp } from "viem";
+import { PublicClient, type Hex, keccak256, encodeAbiParameters, toHex, toRlp, Address } from "viem";
 import { readContract } from "viem/actions";
-import { bridgedKeystoreAbi, bridgedKeystoreAddress, anchorStateRegistryAbi, anchorStateRegistryAddress, keystoreAddress, l1BlockAbi, l1BlockAddress } from "../generated";
-import { DebugClient } from "../scripts/lib/client";
+import { anchorStateRegistryAbi, anchorStateRegistryAddress, l1BlockAbi, l1BlockAddress } from "../generated";
 
-
-/**
- * Retrieves the storage proof for a given keystore ID from the master chain.
- *
- * This function performs the following steps:
- * 1. On the replica, it fetches the L1 block number for the latest storage root.
- * 2. On L1, it retrieves the master chain's confirmed block number at the given L1 block number.
- * 3. On the master chain, it obtains the storage proof for the keystore ID at the confirmed block number.
- *
- * @param l1Client - The PublicClient instance for interacting with the L1 chain.
- * @param masterClient - The PublicClient instance for interacting with the master chain.
- * @param replicaClient - The PublicClient instance for interacting with the replica chain.
- * @param keystoreID - The keystore ID for which the storage proof is to be retrieved.
- * @returns A promise that resolves to the storage proof for the given keystore ID.
- */
-export async function getConfirmedValueHashStorageProof(l1Client: PublicClient, masterClient: PublicClient, replicaClient: PublicClient, keystoreID: Hex) {
-  // On the replica, get the L1 block number for the latest storage root.
-  const l1BlockNumber = await readContract(replicaClient, {
-    abi: bridgedKeystoreAbi,
-    address: bridgedKeystoreAddress,
-    functionName: "l1BlockNumber",
-  });
-
-  // On L1, get the master chain's confirmed block number at the given L1 block number.
-  const [_, masterBlockNumber] = await readContract(l1Client, {
-    abi: anchorStateRegistryAbi,
-    address: anchorStateRegistryAddress,
-    functionName: "anchors",
-    args: [0],
-    blockNumber: l1BlockNumber,
-  });
-
-  // On the master chain, get the storage proof for the keystoreID at the confirmed block number.
-  const recordsSlotHash = keccak256(encodeAbiParameters([{ type: "uint256" }], [0n]));
-  const valueHashSlotHash = keccak256(encodeAbiParameters([
-    { type: "bytes32" }, { type: "bytes32" }
-  ],
-    [keystoreID, recordsSlotHash])
-  );
-  const proof = await masterClient.getProof({
-    address: keystoreAddress,
-    storageKeys: [valueHashSlotHash],
-    blockNumber: masterBlockNumber,
-  });
-  return proof.storageProof[0].proof;
+type CrossChainProofBlockNumbers = {
+  masterBlockNumber: bigint;
+  l1BlockNumber: bigint;
 }
 
 /**
- * Retrieves a proof of the latest keystore storage root on the master chain that has been
- * confirmed on the L1 chain.
- *
- * @param l1Client - The DebugClient instance connected to the L1 chain.
- * @param masterClient - The PublicClient instance connected to the master chain.
- * @param replicaClient - The DebugClient instance connected to the replica chain.
- * @returns A keystore storage root proof object containing various proofs and state roots.
+ * Retrieves the master chain block number for the latest storage root confirmed on the L1 chain.
  */
-export async function getKeystoreStorageRootProof(l1Client: DebugClient, masterClient: PublicClient, replicaClient: DebugClient) {
-  // Prove the latest L1Block value on the replica.
-  const replicaBlockNumber = await replicaClient.getBlockNumber() - 1n;
-  const opStackL1BlockProof = await getOPStackL1BlockProof(replicaClient, replicaBlockNumber);
-  const l1BlockHashProof = encodeOPStackL1BlockProof(opStackL1BlockProof);
-
-  // Get the header of the latest L1 block on the replica.
+export async function getCrossChainProofBlockNumbers(l1Client: PublicClient, replicaClient: PublicClient, replicaBlockNumber: bigint): Promise<CrossChainProofBlockNumbers> {
+  // On the replica, get the L1 block number for the latest storage root.
   const l1BlockNumber = await readContract(replicaClient, {
     abi: l1BlockAbi,
     address: l1BlockAddress,
     functionName: "number",
     blockNumber: replicaBlockNumber,
   });
-  const l1BlockHeaderRlp = await getBlockHeaderRlp(l1Client, l1BlockNumber);
-
-  const anchorStorageProof = await getAnchorStateRegistryProof(l1Client, l1BlockNumber);
-  const anchorStateRegistryAccountProof = anchorStorageProof.accountProof;
-  const anchorStateRegistryStorageProof = anchorStorageProof.storageProof[0].proof;
 
   // On L1, get the master chain's confirmed block number at the given L1 block number.
   const [_, masterBlockNumber] = await readContract(l1Client, {
@@ -87,15 +28,58 @@ export async function getKeystoreStorageRootProof(l1Client: DebugClient, masterC
     blockNumber: l1BlockNumber,
   });
 
-  // Prove the keystore account on the master chain.
+  return { masterBlockNumber, l1BlockNumber };
+}
+
+/**
+ * Retrieves a proof of the latest keystore storage root on the master chain that has been
+ * confirmed on the L1 chain.
+ *
+ * @param account - The address of the keystore account to prove.
+ * @param l1Client - The PublicClient instance connected to the L1 chain.
+ * @param masterClient - The PublicClient instance connected to the master chain.
+ * @param replicaClient - The PublicClient instance connected to the replica chain.
+ * @returns A keystore storage root proof object containing various proofs and state roots.
+ */
+export async function getMasterKeystoreProofs(account: Address, masterClient: PublicClient, replicaClient: PublicClient, l1Client: PublicClient) {
+  // Start from the previous block on the replica chain to avoid issues on
+  // forked chains that don't increment blocks. From there, find the block
+  // numbers on the master and L1 chains to use for our proofs.
+  const replicaBlockNumber = await replicaClient.getBlockNumber() - 1n;
+  const { masterBlockNumber, l1BlockNumber } = await getCrossChainProofBlockNumbers(l1Client, replicaClient, replicaBlockNumber);
+  const l1BlockHeaderRlp = await getBlockHeaderRlp(l1Client, l1BlockNumber);
+
+  // Prove the anchor state registry account on the L1 chain.
+  const anchorStorageProof = await getAnchorStateRegistryProof(l1Client, l1BlockNumber);
+  const anchorStateRegistryAccountProof = anchorStorageProof.accountProof;
+  const anchorStateRegistryStorageProof = anchorStorageProof.storageProof[0].proof;
+
+  // Prove the master keystore storage slots.
+  const masterKeystoreStorageLocation = "0xab0db9dff4dd1cc7cbf1b247b1f1845c685dfd323fb0c6da795f47e8940a2c00";
+  const configHashSlotHash = keccak256(encodeAbiParameters(
+    [{ type: "uint256" }, { type: "bytes32" }],
+    [0n, masterKeystoreStorageLocation])
+  );
+  const configNonceSlotHash = keccak256(encodeAbiParameters(
+    [{ type: "uint256" }, { type: "bytes32" }],
+    [1n, masterKeystoreStorageLocation])
+  );
   const keystoreProof = await masterClient.getProof({
-    address: keystoreAddress,
-    storageKeys: [],
+    address: account,
+    storageKeys: [configHashSlotHash, configNonceSlotHash],
     blockNumber: masterBlockNumber,
   });
   const keystoreAccountProof = keystoreProof.accountProof;
+  const keystoreConfigHashProof = keystoreProof.storageProof[0].proof;
+  const keystoreConfigHash = keystoreProof.storageProof[0].value;
+  const keystoreConfigNonce = keystoreProof.storageProof[1].value;
+
 
   const outputRootPreimages = await getOutputRootPreimages(masterClient, masterBlockNumber);
+
+  const opStackL1BlockProof = await getOPStackL1BlockProof(replicaClient, replicaBlockNumber);
+  const l1BlockHashProof = encodeOPStackL1BlockProof(opStackL1BlockProof);
+
 
   return {
     l1BlockHeaderRlp,
@@ -103,11 +87,15 @@ export async function getKeystoreStorageRootProof(l1Client: DebugClient, masterC
     anchorStateRegistryAccountProof,
     anchorStateRegistryStorageProof,
     keystoreAccountProof,
+    keystoreConfigHashProof,
+    keystoreConfigHash,
+    keystoreConfigNonce,
     l2StateRoot: outputRootPreimages.stateRoot,
     l2MessagePasserStorageRoot: outputRootPreimages.messagePasserStorageRoot,
     l2BlockHash: outputRootPreimages.hash,
   };
 }
+
 type OPStackProofData = {
   l2BlockHeaderRlp: Hex;
   l1BlockAccountProof: Hex[];
@@ -117,12 +105,12 @@ type OPStackProofData = {
 /**
  * Proves the L1Block.hash storage slot on an OP Stack chain.
  *
- * @param client - The DebugClient instance used to interact with the blockchain.
+ * @param client - The PublicClient instance used to interact with the blockchain.
  * @param blockNumber - The block number for which to retrieve the proof data.
  * @returns A promise that resolves to an object containing the L2 block header RLP, 
  *          the L1 block account proof, and the L1 block storage proof.
  */
-async function getOPStackL1BlockProof(client: DebugClient, blockNumber: bigint): Promise<OPStackProofData> {
+async function getOPStackL1BlockProof(client: PublicClient, blockNumber: bigint): Promise<OPStackProofData> {
   const l2BlockHeaderRlp = await getBlockHeaderRlp(client, blockNumber);
   // cast storage 0x4200000000000000000000000000000000000015 --rpc-url https://sepolia.base.org
   const l1BlockHashSlot = BigInt(2);
