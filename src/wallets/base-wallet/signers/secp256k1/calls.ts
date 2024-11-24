@@ -5,6 +5,7 @@ import { getConfigDataForPrivateKey } from "./config-data";
 import { buildUserOp, Call, getUserOpHash } from "../../user-op";
 import { client, chain, bundlerClient } from "../../../../../scripts/lib/client";
 import { signAndWrap } from "./sign";
+import { encodeConfigData } from "../../config";
 
 /**
  * Creates and sends a Base Wallet user operation signed with an secp256k1 private key.
@@ -16,7 +17,7 @@ import { signAndWrap } from "./sign";
  * @returns A promise of the user operation hash.
  */
 export async function makeCalls(privateKey: Hex, calls: Call[], paymasterData = "0x" as Hex) {
-  const initialConfigData = getConfigDataForPrivateKey(privateKey);
+  const initialConfigData = encodeConfigData(getConfigDataForPrivateKey(privateKey));
   const op = await buildUserOp(client, {
     initialConfigData,
     calls,

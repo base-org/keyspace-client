@@ -2,7 +2,6 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 import { Address, Hex } from "viem";
 import { sign } from "viem/accounts";
 import { l1Client, masterClient, client } from "../../../../../scripts/lib/client";
-import { getConfirmedValueHashStorageProof } from "../../../../proofs";
 import { encodeSignature, wrapSignature } from "../../user-op";
 import { serializePublicKeyFromBytes } from "./config-data";
 import { encodePackedSignature } from "./signatures";
