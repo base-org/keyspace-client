@@ -9,7 +9,6 @@ import {
   type Hex
 } from "viem";
 import { l1Client, masterClient, client } from "../../../../../scripts/lib/client";
-import { getConfirmedValueHashStorageProof } from "../../../../proofs";
 import { encodeSignature, wrapSignature } from "../../user-op";
 import { serializePublicKeyFromPoint } from "./config-data";
 import { encodeWebAuthnAuth } from "./signatures";

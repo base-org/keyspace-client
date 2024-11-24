@@ -301,7 +301,7 @@ export function encodeSignature({
   ownerBytes: Hex;
   confirmedValueHashStorageProof: Hex[];
 }): Hex {
-  const recordData = encodeConfigData(ownerBytes);
+  const recordData = encodeConfigData({ owners: [ownerBytes] });
   const userOpSig = encodeAbiParameters([{
     components: [
       { name: "sig", type: "bytes" },

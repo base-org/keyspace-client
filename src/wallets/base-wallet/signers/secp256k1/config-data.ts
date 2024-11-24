@@ -1,5 +1,5 @@
 import { type Hex, encodeAbiParameters, keccak256 } from "viem";
-import { encodeConfigData } from "../../config";
+import { CoinbaseSmartWalletConfigData } from "../../config";
 import { privateKeyToAccount } from "viem/accounts";
 
 
@@ -9,9 +9,9 @@ import { privateKeyToAccount } from "viem/accounts";
  * @param privateKey - The private key as a hex string.
  * @returns The config data as a hex string.
  */
-export function getConfigDataForPrivateKey(privateKey: Hex): Hex {
+export function getConfigDataForPrivateKey(privateKey: Hex): CoinbaseSmartWalletConfigData {
   const ownerBytes = serializePublicKeyFromPrivateKey(privateKey);
-  return encodeConfigData(ownerBytes);
+  return { owners: [ownerBytes] };
 }
 
 /**
@@ -36,4 +36,3 @@ export function serializePublicKeyFromPrivateKey(privateKey: Hex): Hex {
   const account = privateKeyToAccount(privateKey);
   return encodeAbiParameters([{ type: "address" }], [account.address]);
 }
-

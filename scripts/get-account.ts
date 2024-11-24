@@ -6,6 +6,7 @@ import { client } from "./lib/client";
 import { getAddressByHash } from "../src/wallets/base-wallet/user-op";
 import { Hex } from "viem";
 import { hashConfig } from "../src/config";
+import { CoinbaseSmartWalletConfigData, getConfigHash } from "../src/wallets/base-wallet/config";
 const P256 = require("ecdsa-secp256r1");
 
 async function main() {
@@ -23,17 +24,19 @@ async function main() {
   });
 
   const args = parser.parse_args();
-  let configData;
+  let configData: CoinbaseSmartWalletConfigData;
   if (args.signature_type === "secp256k1") {
     configData = getConfigDataForSecp256k1PrivateKey(args.private_key);
+    console.log("Public key:", configData.owners[0]);
   } else if (args.signature_type === "webauthn") {
     const privateKey = P256.fromJWK(JSON.parse(args.private_key));
     configData = getConfigDataForWebAuthnPrivateKey(privateKey);
   } else {
     console.error("Invalid circuit type");
+    return;
   }
 
-  const initialConfigHash = hashConfig(0n, configData as Hex);
+  const initialConfigHash = getConfigHash(0n, configData);
   console.log("Initial config hash", initialConfigHash);
   console.log("Account address:", await getAddressByHash(client, {
     initialConfigHash,

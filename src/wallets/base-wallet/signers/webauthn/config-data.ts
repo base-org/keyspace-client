@@ -1,5 +1,5 @@
 import { Hex, toHex } from "viem";
-import { encodeConfigData } from "../../config";
+import { CoinbaseSmartWalletConfigData, encodeConfigData } from "../../config";
 
 
 /**
@@ -8,9 +8,9 @@ import { encodeConfigData } from "../../config";
  * @param privateKey - The P256 private key as a hex string.
  * @returns The config data as a hex string.
  */
-export function getConfigDataForPrivateKey(privateKey: any): Hex {
+export function getConfigDataForPrivateKey(privateKey: any): CoinbaseSmartWalletConfigData {
   const pk256 = serializePublicKeyFromPoint(privateKey.x, privateKey.y);
-  return encodeConfigData(toHex(pk256));
+  return { owners: [toHex(pk256)] };
 }
 
 /**
