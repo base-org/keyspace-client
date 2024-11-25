@@ -16,8 +16,8 @@ async function main() {
     help: "The current private key of the syncer",
     ...defaultToEnv("PRIVATE_KEY"),
   });
-  parser.add_argument("--address", {
-    help: "The address of the wallet",
+  parser.add_argument("--account", {
+    help: "The account of the keystore wallet to sync",
     required: true,
   });
   parser.add_argument("--config-data", {

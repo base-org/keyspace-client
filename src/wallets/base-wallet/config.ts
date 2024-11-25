@@ -1,5 +1,6 @@
-import { type Hex, encodeAbiParameters, keccak256 } from "viem";
-import { hashConfig } from "../../config";
+import { type Hex, decodeAbiParameters, encodeAbiParameters } from "viem";
+import { KeystoreConfig } from "../../config";
+
 
 export type CoinbaseSmartWalletConfigData = {
   owners: Hex[];
@@ -20,16 +21,28 @@ export function encodeConfigData(configData: CoinbaseSmartWalletConfigData): Hex
   }], [configData]);
 }
 
-export function getConfigWithAddedOwner(config: CoinbaseSmartWalletConfigData, ownerBytes: Hex): CoinbaseSmartWalletConfigData {
-  return { 
-    ...config,
-    owners: [...config.owners, ownerBytes],
+export function decodeConfigData(configData: Hex): CoinbaseSmartWalletConfigData {
+  const decoded = decodeAbiParameters([{
+    components: [{ name: "owners", type: "bytes[]" }],
+    type: "tuple",
+  }], configData)[0];
+  return {
+    owners: [...decoded.owners]
   };
 }
 
-export function getConfigWithRemovedOwner(config: CoinbaseSmartWalletConfigData, ownerBytes: Hex): CoinbaseSmartWalletConfigData {
-  return {
-    ...config,
-    owners: config.owners.filter((o) => o !== ownerBytes),
+export function getConfigDataWithAddedOwner(configData: CoinbaseSmartWalletConfigData, ownerBytes: Hex): CoinbaseSmartWalletConfigData {
+  return { 
+    ...configData,
+    owners: [...configData.owners, ownerBytes],
   };
 }
+
+export function getConfigDataWithRemovedOwner(configData: CoinbaseSmartWalletConfigData, ownerBytes: Hex): CoinbaseSmartWalletConfigData {
+  return {
+    ...configData,
+    owners: configData.owners.filter((o) => o !== ownerBytes),
+  };
+}
+
+

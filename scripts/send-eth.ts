@@ -10,8 +10,8 @@ async function main() {
     description: "Send 1 wei",
   });
 
-  parser.add_argument("--address", {
-    help: "The address of the wallet",
+  parser.add_argument("--account", {
+    help: "The account of the keystore wallet to send from",
     required: true,
   });
   parser.add_argument("--owner-index", {
@@ -57,12 +57,12 @@ async function main() {
     value: amount,
   }];
   callsModule.makeCalls({
-    account: args.address,
+    account: args.account,
     ownerIndex: args.owner_index,
     initialConfigData: args.initial_config_data,
     privateKey,
-    calls
-});
+    calls,
+  });
 }
 
 if (import.meta.main) {

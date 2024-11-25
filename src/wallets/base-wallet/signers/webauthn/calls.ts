@@ -1,4 +1,4 @@
-import { Address, Hex } from "viem";
+import { Address, encodeAbiParameters, Hex } from "viem";
 const P256 = require("ecdsa-secp256r1");
 
 import { entryPointAddress } from "../../../../../generated";
@@ -8,6 +8,7 @@ import { buildUserOp, Call, getUserOpHash } from "../../user-op";
 import { bundlerClient, chain, client } from "../../../../../scripts/lib/client";
 import { encodeConfigData } from "../../config";
 import { buildDummySignature } from "./signatures";
+import { hashConfig, KeystoreConfig } from "../../../../config";
 
 const jwk = JSON.parse(process.env.P256_JWK || "");
 export const p256PrivateKey: P256PrivateKey = P256.fromJWK(jwk);
@@ -49,4 +50,33 @@ export async function makeCalls({ account, ownerIndex, calls, privateKey, paymas
   });
 
   console.log("opHash", opHash);
+}
+
+/**
+ * Signs the authorization for a setConfig transaction.
+ *
+ * @param config - The new configuration data.
+ * @param ownerIndex - The index of the owner.
+ * @param privateKey - The private key object used for signing.
+ * @returns A promise of the encoded authorization signature.
+ */
+export async function signSetConfigAuth({
+  config,
+  ownerIndex,
+  privateKey,
+}: {
+  config: KeystoreConfig,
+  ownerIndex: bigint,
+  privateKey: P256PrivateKey,
+}) {
+  const hash = hashConfig(config);
+  const sigAuth = await signAndWrap({ hash, privateKey, ownerIndex });
+  const sigUpdate = "0x";
+  return encodeAbiParameters(
+    [
+      { type: "bytes", name: "sigAuth" },
+      { type: "bytes", name: "sigUpdate" },
+    ],
+    [sigAuth, sigUpdate]
+  )
 }
