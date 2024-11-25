@@ -3,10 +3,8 @@ import { defaultToEnv } from "./lib/argparse";
 import { getConfigDataForPrivateKey as getConfigDataForSecp256k1PrivateKey } from "../src/wallets/base-wallet/signers/secp256k1/config-data";
 import { getConfigDataForPrivateKey as getConfigDataForWebAuthnPrivateKey } from "../src/wallets/base-wallet/signers/webauthn/config-data";
 import { client } from "./lib/client";
-import { getAddressByHash } from "../src/wallets/base-wallet/user-op";
-import { Hex } from "viem";
-import { hashConfig } from "../src/config";
-import { CoinbaseSmartWalletConfigData, getConfigHash } from "../src/wallets/base-wallet/config";
+import { getAddress } from "../src/wallets/base-wallet/user-op";
+import { CoinbaseSmartWalletConfigData, encodeConfigData } from "../src/wallets/base-wallet/config";
 const P256 = require("ecdsa-secp256r1");
 
 async function main() {
@@ -36,10 +34,9 @@ async function main() {
     return;
   }
 
-  const initialConfigHash = getConfigHash(0n, configData);
-  console.log("Initial config hash", initialConfigHash);
-  console.log("Account address:", await getAddressByHash(client, {
-    initialConfigHash,
+  console.log("Initial config data:", encodeConfigData(configData));
+  console.log("Account address:", await getAddress(client, {
+    initialConfigData: encodeConfigData(configData),
     nonce: 0n,
   }));
 }

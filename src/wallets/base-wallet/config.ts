@@ -20,16 +20,6 @@ export function encodeConfigData(configData: CoinbaseSmartWalletConfigData): Hex
   }], [configData]);
 }
 
-/**
- * Computes the config hash for a given configuration.
- *
- * @param data - The config data to be hashed.
- * @returns The hexadecimal representation of the config hash.
- */
-export function getConfigHash(nonce: bigint, data: CoinbaseSmartWalletConfigData): Hex {
-  return hashConfig(nonce, encodeConfigData(data));
-}
-
 export function getConfigWithAddedOwner(config: CoinbaseSmartWalletConfigData, ownerBytes: Hex): CoinbaseSmartWalletConfigData {
   return { 
     ...config,
