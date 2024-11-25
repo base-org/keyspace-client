@@ -10,9 +10,16 @@ async function main() {
     description: "Send 1 wei",
   });
 
-  parser.add_argument("--keystore-id", {
-    help: "The keystore ID to change owner of",
-    ...defaultToEnv("KEYSTORE_ID"),
+  parser.add_argument("--address", {
+    help: "The address of the wallet",
+    required: true,
+  });
+  parser.add_argument("--owner-index", {
+    help: "The index of the owner",
+    default: 0,
+  });
+  parser.add_argument("--initial-config-data", {
+    help: "The initial config data needed to deploy the wallet as a hex string",
   });
   parser.add_argument("--private-key", {
     help: "The current private key of the owner",
@@ -23,7 +30,7 @@ async function main() {
     required: true,
   });
   parser.add_argument("--signature-type", {
-    help: "The type of signature for the Keyspace key",
+    help: "The type of signature for the signing key",
     default: "secp256k1",
   });
 
@@ -49,7 +56,13 @@ async function main() {
     data: "0x",
     value: amount,
   }];
-  callsModule.makeCalls(args.keystore_id, privateKey, calls);
+  callsModule.makeCalls({
+    account: args.address,
+    ownerIndex: args.owner_index,
+    initialConfigData: args.initial_config_data,
+    privateKey,
+    calls
+});
 }
 
 if (import.meta.main) {

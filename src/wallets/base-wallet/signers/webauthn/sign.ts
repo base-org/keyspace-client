@@ -1,6 +1,5 @@
 import { base64urlnopad } from "@scure/base";
 import {
-  Address,
   decodeAbiParameters, encodePacked,
   hexToBigInt,
   hexToBytes,
@@ -8,9 +7,7 @@ import {
   stringToBytes,
   type Hex
 } from "viem";
-import { l1Client, masterClient, client } from "../../../../../scripts/lib/client";
-import { encodeSignature, wrapSignature } from "../../user-op";
-import { serializePublicKeyFromPoint } from "./config-data";
+import { wrapSignature } from "../../user-op";
 import { encodeWebAuthnAuth } from "./signatures";
 
 export type P256PrivateKey = {
@@ -48,29 +45,26 @@ export function p256WebAuthnSign(
   return { r, s, clientDataJSON, authenticatorData };
 }
 
+export type SignAndWrapParameters = {
+  hash: Hex;
+  ownerIndex: bigint;
+  privateKey: P256PrivateKey;
+}
+
 /**
  * Signs a hash with the provided private key and wraps the signature for use by the Base Wallet contracts.
  *
  * @param hash - The hash to be signed.
+ * @param ownerIndex - The index of the owner in the Base Wallet.
  * @param privateKey - The P256 private key used for signing.
- * @param keystoreID - The keystore ID associated with the Base Wallet.
  * @returns A promise that resolves to the wrapped signature as a hex string.
  */
-export async function signAndWrap(
-  { hash, privateKey, keystoreAddress }: { hash: Hex; privateKey: P256PrivateKey; keystoreAddress: Address; }
-): Promise<Hex> {
+export async function signAndWrap({ hash, ownerIndex, privateKey }: SignAndWrapParameters): Promise<Hex> {
   const signature = await p256WebAuthnSign({
     challenge: hash,
     authenticatorData,
     p256PrivateKey: privateKey,
   });
-  // TODO: Update getConfirmedValueHashStorageProof to prove the correct slot in keystoreAddress's storage.
-  const confirmedValueHashStorageProof = await getConfirmedValueHashStorageProof(
-    l1Client, masterClient, client, keystoreAddress as Hex);
 
-  return encodeSignature({
-    signatureWrapper: wrapSignature(0n, encodeWebAuthnAuth(signature)),
-    ownerBytes: serializePublicKeyFromPoint(privateKey.x, privateKey.y),
-    confirmedValueHashStorageProof,
-  });
+  return wrapSignature(ownerIndex, encodeWebAuthnAuth(signature));
 }
