@@ -1,4 +1,4 @@
-import { Address, Hex } from "viem";
+import { Address, encodeAbiParameters, Hex } from "viem";
 
 import { entryPointAddress } from "../../../../../generated";
 import { getConfigDataForPrivateKey } from "./config-data";
@@ -7,6 +7,7 @@ import { client, chain, bundlerClient } from "../../../../../scripts/lib/client"
 import { signAndWrap } from "./sign";
 import { encodeConfigData } from "../../config";
 import { buildDummySignature } from "./signatures";
+import { hashConfig, KeystoreConfig } from "../../../../config";
 
 export type MakeCallsParameters = {
   account: Address;
@@ -45,4 +46,33 @@ export async function makeCalls({ account, ownerIndex, calls, privateKey, paymas
   });
 
   return opHash;
+}
+
+/**
+ * Signs the authorization for a setConfig transaction.
+ *
+ * @param config - The new configuration data.
+ * @param ownerIndex - The index of the owner.
+ * @param privateKey - The private key object used for signing.
+ * @returns A promise of the encoded authorization signature.
+ */
+export async function signSetConfigAuth({
+  config,
+  ownerIndex,
+  privateKey,
+}: {
+  config: KeystoreConfig,
+  ownerIndex: bigint,
+  privateKey: Hex,
+}) {
+  const hash = hashConfig(config);
+  const sigAuth = await signAndWrap({ hash, privateKey, ownerIndex });
+  const sigUpdate = "0x";
+  return encodeAbiParameters(
+    [
+      { type: "bytes", name: "sigAuth" },
+      { type: "bytes", name: "sigUpdate" },
+    ],
+    [sigAuth, sigUpdate]
+  )
 }

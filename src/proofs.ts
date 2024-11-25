@@ -1,4 +1,4 @@
-import { PublicClient, type Hex, keccak256, encodeAbiParameters, toHex, toRlp, Address } from "viem";
+import { PublicClient, type Hex, keccak256, encodeAbiParameters, toHex, toRlp, Address, fromHex } from "viem";
 import { readContract } from "viem/actions";
 import { anchorStateRegistryAbi, anchorStateRegistryAddress, l1BlockAbi, l1BlockAddress } from "../generated";
 
@@ -6,6 +6,8 @@ type CrossChainProofBlockNumbers = {
   masterBlockNumber: bigint;
   l1BlockNumber: bigint;
 }
+
+export const MASTER_KEYSTORE_STORAGE_LOCATION = "0xab0db9dff4dd1cc7cbf1b247b1f1845c685dfd323fb0c6da795f47e8940a2c00";
 
 /**
  * Retrieves the master chain block number for the latest storage root confirmed on the L1 chain.
@@ -55,18 +57,11 @@ export async function getMasterKeystoreProofs(account: Address, masterClient: Pu
   const anchorStateRegistryStorageProof = anchorStorageProof.storageProof[0].proof;
 
   // Prove the master keystore storage slots.
-  const masterKeystoreStorageLocation = "0xab0db9dff4dd1cc7cbf1b247b1f1845c685dfd323fb0c6da795f47e8940a2c00";
-  const configHashSlotHash = keccak256(encodeAbiParameters(
-    [{ type: "uint256" }, { type: "bytes32" }],
-    [0n, masterKeystoreStorageLocation])
-  );
-  const configNonceSlotHash = keccak256(encodeAbiParameters(
-    [{ type: "uint256" }, { type: "bytes32" }],
-    [1n, masterKeystoreStorageLocation])
-  );
+  const configHashSlot = toHex(fromHex(MASTER_KEYSTORE_STORAGE_LOCATION, "bigint") + 0n);
+  const configNonceSlot = toHex(fromHex(MASTER_KEYSTORE_STORAGE_LOCATION, "bigint") + 1n);
   const keystoreProof = await masterClient.getProof({
     address: account,
-    storageKeys: [configHashSlotHash, configNonceSlotHash],
+    storageKeys: [configHashSlot, configNonceSlot],
     blockNumber: masterBlockNumber,
   });
   const keystoreAccountProof = keystoreProof.accountProof;
