@@ -1,6 +1,6 @@
 import { Address, encodeAbiParameters, encodeFunctionData, encodePacked, fromHex, Hex, keccak256, PublicClient, toHex } from "viem";
 import { accountAbi } from "../generated";
-import { MASTER_KEYSTORE_STORAGE_LOCATION } from "./proofs";
+import { MASTER_KEYSTORE_STORAGE_LOCATION } from "./proofs/op-stack";
 
 export type KeystoreConfig = {
   account: Address;
@@ -53,6 +53,22 @@ export function buildSetConfigCalldata(config: KeystoreConfig, authorizationProo
     abi: accountAbi,
     functionName: "setConfig",
     args: [config, authorizationProof],
+  });
+}
+
+export function buildConfirmConfigCalldata(config: KeystoreConfig, keystoreProof: Hex) {
+  return encodeFunctionData({
+    abi: accountAbi,
+    functionName: "confirmConfig",
+    args: [config, keystoreProof],
+  });
+}
+
+export function buildPreconfirmConfigCalldata(config: KeystoreConfig, authorizationProof: Hex, confirmedConfigHashIndex: bigint) {
+  return encodeFunctionData({
+    abi: accountAbi,
+    functionName: "preconfirmConfig",
+    args: [confirmedConfigHashIndex, config, authorizationProof],
   });
 }
 

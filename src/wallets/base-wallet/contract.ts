@@ -9,8 +9,12 @@ export async function getIsDeployed(client: Client, address: Address): Promise<b
 }
 
 export async function getMasterChainId(client: Client) {
+  if (!client.chain?.id) {
+    throw new Error("Chain not found");
+  }
+
   const implementation = await readContract(client, {
-    address: accountFactoryAddress,
+    address: accountFactoryAddress[client.chain.id as keyof typeof accountFactoryAddress],
     abi: accountFactoryAbi,
     functionName: "implementation",
   });

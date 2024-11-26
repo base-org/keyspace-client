@@ -1,6 +1,6 @@
 import { PublicClient, type Hex, keccak256, encodeAbiParameters, toHex, toRlp, Address, fromHex } from "viem";
 import { readContract } from "viem/actions";
-import { anchorStateRegistryAbi, anchorStateRegistryAddress, l1BlockAbi, l1BlockAddress } from "../generated";
+import { anchorStateRegistryAbi, anchorStateRegistryAddress, l1BlockAbi, l1BlockAddress } from "../../generated";
 
 type CrossChainProofBlockNumbers = {
   masterBlockNumber: bigint;
@@ -33,6 +33,20 @@ export async function getCrossChainProofBlockNumbers(l1Client: PublicClient, rep
   return { masterBlockNumber, l1BlockNumber };
 }
 
+export type OPStackMasterKeystoreProofs = {
+  l1BlockHeaderRlp: Hex;
+  l1BlockHashProof: L1BlockHashProof;
+  anchorStateRegistryAccountProof: Hex[];
+  anchorStateRegistryStorageProof: Hex[];
+  masterKeystoreAccountProof: Hex[];
+  masterKeystoreStorageProof: Hex[];
+  keystoreConfigHash: Hex;
+  keystoreConfigNonce: bigint;
+  l2StateRoot: Hex;
+  l2MessagePasserStorageRoot: Hex;
+  l2BlockHash: Hex;
+};
+
 /**
  * Retrieves a proof of the latest keystore storage root on the master chain that has been
  * confirmed on the L1 chain.
@@ -43,7 +57,7 @@ export async function getCrossChainProofBlockNumbers(l1Client: PublicClient, rep
  * @param replicaClient - The PublicClient instance connected to the replica chain.
  * @returns A keystore storage root proof object containing various proofs and state roots.
  */
-export async function getMasterKeystoreProofs(account: Address, masterClient: PublicClient, replicaClient: PublicClient, l1Client: PublicClient) {
+export async function getMasterKeystoreProofs(account: Address, masterClient: PublicClient, replicaClient: PublicClient, l1Client: PublicClient): Promise<OPStackMasterKeystoreProofs> {
   // Start from the previous block on the replica chain to avoid issues on
   // forked chains that don't increment blocks. From there, find the block
   // numbers on the master and L1 chains to use for our proofs.
@@ -64,9 +78,9 @@ export async function getMasterKeystoreProofs(account: Address, masterClient: Pu
     storageKeys: [configHashSlot, configNonceSlot],
     blockNumber: masterBlockNumber,
   });
-  const keystoreAccountProof = keystoreProof.accountProof;
-  const keystoreConfigHashProof = keystoreProof.storageProof[0].proof;
-  const keystoreConfigHash = keystoreProof.storageProof[0].value;
+  const masterKeystoreAccountProof = keystoreProof.accountProof;
+  const masterKeystoreStorageProof = keystoreProof.storageProof[0].proof;
+  const keystoreConfigHash = toHex(keystoreProof.storageProof[0].value);
   const keystoreConfigNonce = keystoreProof.storageProof[1].value;
 
 
@@ -81,14 +95,34 @@ export async function getMasterKeystoreProofs(account: Address, masterClient: Pu
     l1BlockHashProof,
     anchorStateRegistryAccountProof,
     anchorStateRegistryStorageProof,
-    keystoreAccountProof,
-    keystoreConfigHashProof,
+    masterKeystoreAccountProof,
+    masterKeystoreStorageProof,
     keystoreConfigHash,
     keystoreConfigNonce,
     l2StateRoot: outputRootPreimages.stateRoot,
     l2MessagePasserStorageRoot: outputRootPreimages.messagePasserStorageRoot,
     l2BlockHash: outputRootPreimages.hash,
   };
+}
+
+export function encodeOPStackProof(proof: OPStackMasterKeystoreProofs): Hex {
+  return encodeAbiParameters(
+    [{ type: "tuple", name: "proof", components: [
+      { type: "bytes", name: "l1BlockHeaderRlp" },
+      { type: "tuple", name: "l1BlockHashProof", components: [
+        { type: "uint8", name: "proofType" },
+        { type: "bytes", name: "proofData" },
+      ]},
+      { type: "bytes[]", name: "masterKeystoreAccountProof" },
+      { type: "bytes[]", name: "masterKeystoreStorageProof" },
+      { type: "bytes[]", name: "anchorStateRegistryAccountProof" },
+      { type: "bytes[]", name: "anchorStateRegistryStorageProof" },
+      { type: "bytes", name: "l2StateRoot" },
+      { type: "bytes", name: "l2MessagePasserStorageRoot" },
+      { type: "bytes", name: "l2BlockHash" },
+    ]}],
+    [proof]
+  );
 }
 
 type OPStackProofData = {
