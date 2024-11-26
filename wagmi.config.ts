@@ -4,13 +4,17 @@ import smartWalletABI from "./abis/SmartWallet.json";
 import smartWalletFactoryABI from "./abis/SmartWalletFactory.json";
 import anchorStateRegistryABI from "./abis/AnchorStateRegistry.json";
 import l1BlockABI from "./abis/L1Block.json";
+import { baseSepolia, optimismSepolia } from "viem/chains";
 
 export default defineConfig({
   out: "./generated.ts",
   contracts: [
     {
       abi: smartWalletFactoryABI,
-      address: "0x5987f89b6BD73229056e3D2822E47Cae906CdBd9",
+      address: {
+        [baseSepolia.id]: "0x5987f89b6BD73229056e3D2822E47Cae906CdBd9",
+        [optimismSepolia.id]: "0x4Ca895d26b7eb26a9D980565732049d4199f32C8",
+      },
       name: "AccountFactory",
     },
     {

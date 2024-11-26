@@ -42,6 +42,7 @@ export async function buildUserOp(
     }
 
     initCode = getInitCode({
+      client,
       initialConfigData,
       nonce: 0n,
     });
@@ -102,13 +103,19 @@ export async function buildUserOp(
  * @returns The generated initialization code.
  */
 export function getInitCode({
+  client,
   initialConfigData,
   nonce,
 }: {
+  client: PublicClient;
   initialConfigData: Hex;
   nonce: bigint;
 }): Hex {
-  return `${accountFactoryAddress}${
+  if (!client.chain?.id) {
+    throw new Error("Chain not found");
+  }
+
+  return `${accountFactoryAddress[client.chain.id as keyof typeof accountFactoryAddress]}${
     createAccountCalldata({
       initialConfigData,
       nonce,
@@ -149,9 +156,13 @@ export async function getAddress<TChain extends Chain | undefined>(
   client: PublicClient<Transport, TChain>,
   { initialConfigData, nonce }: { initialConfigData: Hex; nonce: bigint },
 ) {
+  if (!client.chain?.id) {
+    throw new Error("Chain not found");
+  }
+
   return await readContract(client, {
     abi: accountFactoryAbi,
-    address: accountFactoryAddress,
+    address: accountFactoryAddress[client.chain.id as keyof typeof accountFactoryAddress],
     functionName: "getAddress",
     args: [initialConfigData, nonce],
   });
@@ -169,9 +180,13 @@ export async function getAddressByHash<TChain extends Chain | undefined>(
   client: PublicClient<Transport, TChain>,
   { initialConfigHash, nonce }: { initialConfigHash: Hex; nonce: bigint },
 ) {
+  if (!client.chain?.id) {
+    throw new Error("Chain not found");
+  }
+
   return await readContract(client, {
     abi: accountFactoryAbi,
-    address: accountFactoryAddress,
+    address: accountFactoryAddress[client.chain.id as keyof typeof accountFactoryAddress],
     functionName: "getAddressByHash",
     args: [initialConfigHash, nonce],
   });

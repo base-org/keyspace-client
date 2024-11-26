@@ -1,24 +1,32 @@
 import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "./lib/argparse";
-import { getMasterKeystoreProofs } from "../src/proofs";
+import { encodeOPStackProof, getMasterKeystoreProofs } from "../src/proofs/op-stack";
 import { l1Client } from "./lib/client";
-import { createPublicClient, createWalletClient, http, PublicClient } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { createPublicClient, http, PublicClient } from "viem";
 import * as chains from "viem/chains";
 import { getIsDeployed, getMasterChainId } from "../src/wallets/base-wallet/contract";
+import * as callsSecp256k1 from "../src/wallets/base-wallet/signers/secp256k1/calls";
+import * as callsWebAuthn from "../src/wallets/base-wallet/signers/webauthn/calls";
+import { buildConfirmConfigCalldata, hashConfig } from "../src/config";
+import { Call } from "../src/wallets/base-wallet/user-op";
+const P256 = require("ecdsa-secp256r1");
 
 async function main() {
   const parser = new ArgumentParser({
     description: "Sync the wallet's keystore config from the configured master chain to the replica chain",
   });
 
+  parser.add_argument("--account", {
+    help: "The account of the keystore wallet to sync",
+    required: true,
+  });
   parser.add_argument("--private-key", {
     help: "The current private key of the syncer",
     ...defaultToEnv("PRIVATE_KEY"),
   });
-  parser.add_argument("--account", {
-    help: "The account of the keystore wallet to sync",
-    required: true,
+  parser.add_argument("--signature-type", {
+    help: "The type of signature for the private key",
+    default: "secp256k1",
   });
   parser.add_argument("--config-data", {
     help: "The current config data for the wallet to sync as a hex string",
@@ -33,6 +41,20 @@ async function main() {
   });
 
   const args = parser.parse_args();
+
+  let privateKey: any;
+  let callsModule: any;
+  if (args.signature_type === "secp256k1") {
+    console.log("Using secp256k1 private key...");
+    privateKey = args.private_key;
+    callsModule = callsSecp256k1;
+  } else if (args.signature_type === "webauthn") {
+    console.log("Using WebAuthn private key...");
+    privateKey = P256.fromJWK(JSON.parse(args.private_key));
+    callsModule = callsWebAuthn;
+  } else {
+    console.error("Invalid signature type");
+  }
 
   // Using the data on the specified replica chain, detect the master chain ID.
   const replicaChain = Object.values(chains).find((chain) => chain.name === args.target_chain);
@@ -49,42 +71,46 @@ async function main() {
   });
 
   // Query the master chain and L1 for proofs of the config hash.
-  const keystoreProofs = await getMasterKeystoreProofs(args.address, masterClient, replicaClient, l1Client);
+  const keystoreProofs = await getMasterKeystoreProofs(args.account, masterClient, replicaClient, l1Client);
 
   // Encode the nonce and --config-data into a Config struct, then hash it and
   //   compare it to the proof.
+  const currentConfig = {
+    account: args.account,
+    nonce: keystoreProofs.keystoreConfigNonce,
+    data: args.config_data,
+  };
+  const currentConfigHash = hashConfig(currentConfig);
+  if (currentConfigHash !== keystoreProofs.keystoreConfigHash) {
+    console.error(`The provided config data does not hash to the expected value. Expected ${keystoreProofs.keystoreConfigHash}, got ${currentConfigHash}.`);
+    process.exit(1);
+  }
 
   // Check if we need to deploy the wallet before syncing.
-  if (!await getIsDeployed(replicaClient, args.address) && !args.initial_config_data) {
+  if (!await getIsDeployed(replicaClient, args.account) && !args.initial_config_data) {
     console.error("Wallet is not deployed, and no initial config data was provided.");
     process.exit(1);
   }
 
   // Call confirmConfig on the replica chain with the Config struct and the proof.
+  const keystoreProof = encodeOPStackProof(keystoreProofs);
+  const data = buildConfirmConfigCalldata(currentConfig, keystoreProof);
 
-  const keystoreStorageRootProof = await getKeystoreStorageRootProof(l1Client, masterClient, client);
+  const calls: Call[] = [{
+    index: 0,
+    target: args.account,
+    data,
+    value: 0n,
+  }];
 
-  console.log(`Syncing keystore storage root to ${client.chain?.name}...`);
-  const account = privateKeyToAccount(args.private_key);
-  const walletClient = createWalletClient({
-    account,
-    chain: client.chain,
-    transport: http(
-      process.env.RPC_URL || ""
-    ),
+  await callsModule.makeCalls({
+    account: args.account,
+    ownerIndex: args.owner_index,
+    initialConfigData: args.initial_config_data,
+    privateKey,
+    calls,
   });
 
-  const { request } = await client.simulateContract({
-    address: bridgedKeystoreAddress,
-    abi: bridgedKeystoreAbi,
-    functionName: "syncKeystoreStorageRoot",
-    args: [keystoreStorageRootProof],
-  });
-
-  const hash = await walletClient.writeContract(request);
-
-  console.log("Transaction hash:", hash);
-  console.log("Done.")
 }
 
 if (import.meta.main) {
