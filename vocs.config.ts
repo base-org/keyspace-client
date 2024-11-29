@@ -15,62 +15,33 @@ export default defineConfig({
       link: '/',
     },
     {
-      text: 'Deployments',
-      link: '/deployments',
+      text: 'Using Keyspace',
+      items: [
+        {
+          text: 'Keystore Basics',
+          link: '/keystore-basics',
+        },
+        {
+          text: 'Updating Your Keystore',
+          link: '/updating-keystore',
+        },
+        {
+          text: 'Using New Signers',
+          link: '/using-new-signers',
+        },
+        {
+          text: 'Revoking Signers',
+          link: '/revoking-signers',
+        },
+        {
+          text: 'Maintaining Wallets',
+          link: '/maintaining-wallets',
+        },
+      ]
     },
     {
       text: 'Releases',
       link: '/releases',
-    },
-    {
-      text: 'Architecture',
-      link: '/architecture',
-    },
-    {
-      text: 'Using Keyspace',
-      items: [
-        {
-          text: 'Authentication & Circuits',
-          link: '/authentication',
-        },
-        {
-          text: 'Contracts',
-          link: '/contracts',
-        },
-        {
-          text: 'Clients',
-          link: '/clients',
-        },
-        {
-          text: 'Web Services',
-          link: '/web-services',
-        }
-      ]
-    },
-    {
-      text: 'Operating Keyspace',
-      items: [
-        {
-          text: 'Rollup Sequencing',
-          link: '/sequencing',
-        },
-        {
-          text: 'Syncing to L2',
-          link: '/syncing-l2',
-        },
-        {
-          text: 'Syncing to Other L1s',
-          link: '/syncing-other-l1',
-        },
-        {
-          text: 'Running Nodes',
-          link: '/nodes',
-        },
-        {
-          text: 'Incident Response',
-          link: '/incident-response',
-        }
-      ]
     },
     {
       text: 'Roadmap',
@@ -79,10 +50,6 @@ export default defineConfig({
     {
       text: 'Gas Estimates',
       link: '/gas-estimates',
-    },
-    {
-      text: 'Original Specification',
-      link: '/original-spec',
     },
     {
       text: 'References',

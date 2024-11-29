@@ -1,0 +1,71 @@
+---
+title: Maintaining Wallets
+description: Learn how to manage wallet upgrades, new chains, and handle hard forks
+---
+
+# Maintaining Wallets
+
+## Performing Wallet Upgrades
+
+Wallet upgrades require careful coordination across chains:
+
+1. **Preparation**:
+   - Test upgrade on testnet
+   - Verify cross-chain compatibility
+   - Prepare upgrade transactions
+
+2. **Execution**:
+   - Deploy new implementation
+   - Update master chain configuration
+   - Sync to replica chains
+
+3. **Verification**:
+   - Confirm successful upgrades
+   - Test functionality on all chains
+   - Monitor for issues
+
+## New Chains and Wallet Factories
+
+### Adding Support for New Chains
+
+When integrating with new chains:
+1. Deploy wallet factory contracts
+2. Configure chain-specific parameters
+3. Set up syncing mechanisms
+
+### Activating a New Chain
+
+To activate your wallet on a new chain with gas paid from an existing chain:
+
+1. **Preparation**:
+   - Deploy necessary contracts
+   - Configure cross-chain messaging
+   - Set up gas fee handling
+
+2. **Activation Process**:
+   - Initialize wallet on new chain
+   - Fund gas from existing chain
+   - Verify activation
+
+3. **Post-Activation**:
+   - Sync latest configuration
+   - Test functionality
+   - Monitor performance
+
+## Syncing after Hard Forks
+
+### L1 Hard Forks
+
+* State Root changes (Verkle tree transition)
+
+### L2 Hard Forks
+
+* State Root changes (Verkle tree transition)
+* L1 state root access on replica chains
+  * L1Block.hash changes
+  * EIP 4788 changes
+* Master chain state root proofs
+  * Any change to output roots
+  * AnchorStateRegistry changes
+  * DisputeGameFactory changes
+  * DisputeGame changes
