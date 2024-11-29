@@ -1,0 +1,46 @@
+---
+title: Using New Signers
+description: Learn how to add and manage new signers in your Keyspace wallet
+---
+
+# Using New Signers
+
+## Set and Sync Together
+
+When adding a new signer to your wallet, you can perform the configuration update and sync operations in a single transaction. This approach:
+- Ensures immediate consistency across specified chains
+- Reduces the number of transactions needed
+- Provides better UX for end users
+
+## Sync via Wallet Vendor
+
+Wallet vendors can provide automated syncing services to improve user experience:
+
+1. **Vendor Services**:
+   - Monitor master chain for configuration changes
+   - Automatically trigger syncs to replica chains
+   - Handle gas fees for sync operations
+
+2. **User Benefits**:
+   - Simplified onboarding
+   - Reduced complexity
+   - Better cross-chain experience 
+
+## Sync with the New Signer
+
+After adding a new signer, you'll need to ensure it can be used across all chains:
+
+1. **Initial Setup**: Configure the new signer on the master chain
+2. **Sync Process**: 
+   - Use Merkle proofs to sync to supported chains
+   - Use deposit/withdrawal for other chains
+3. **Verification**: Confirm the signer is active on all desired chains
+
+### ERC-4337 Validation Restrictions
+
+#### EIP-4788 Beacon Root Oracle
+
+Using 4788 still puts us in a pretty good place: each slot gets written less than once per day, so it's not really dangerous for bundlers to whitelist them and our proofs will have a long shelf life. It should be relatively straightforward to get popular bundlers and Conduit-style single-chain providers to whitelist all of these slots, and push for access to these slots to just be standardized everywhere.
+
+#### Aggregators
+

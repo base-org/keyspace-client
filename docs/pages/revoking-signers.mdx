@@ -1,0 +1,39 @@
+---
+title: Revoking Signers
+description: Learn how to safely revoke signers and handle compromised signer scenarios
+---
+
+# Revoking Signers
+
+## Preconfirming Revocations
+
+Preconfirmation is a security feature that allows you to prepare for signer revocation:
+
+1. **Pre-approval**: Set up revocation parameters before they're needed
+2. **Immediate Execution**: Quick revocation when necessary
+3. **Cross-chain Coordination**: Ensure revocation propagates correctly
+
+## Compromised Signers
+
+When a signer is compromised, quick action is needed across all chains:
+
+### Missed Chains
+
+If some chains weren't updated when a signer was compromised:
+- Use emergency revocation procedures
+- Sync revocation to missed chains immediately
+- Monitor for unauthorized transactions
+
+### New Chains
+
+For chains that become available after a signer was compromised:
+- Block compromised signers from activation
+- Implement additional verification steps
+- Use updated configuration only
+
+### Rollups of Missed or New Chains
+
+Special considerations for rollups:
+1. **Inherited Security**: Understand how L1 security affects L2
+2. **Sync Timing**: Account for finality delays
+3. **Verification**: Ensure proper proof validation 

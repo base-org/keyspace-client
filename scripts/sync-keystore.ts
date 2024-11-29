@@ -2,7 +2,7 @@ import { ArgumentParser } from "argparse";
 import { defaultToEnv } from "./lib/argparse";
 import { encodeOPStackProof, getMasterKeystoreProofs } from "../src/proofs/op-stack";
 import { l1Client } from "./lib/client";
-import { createPublicClient, http, PublicClient } from "viem";
+import { createPublicClient, fromHex, http, PublicClient } from "viem";
 import * as chains from "viem/chains";
 import { getIsDeployed, getMasterChainId } from "../src/wallets/base-wallet/contract";
 import * as callsSecp256k1 from "../src/wallets/base-wallet/signers/secp256k1/calls";
@@ -82,8 +82,11 @@ async function main() {
   };
   const currentConfigHash = hashConfig(currentConfig);
   if (currentConfigHash !== keystoreProofs.keystoreConfigHash) {
-    console.error(`The provided config data does not hash to the expected value. Expected ${keystoreProofs.keystoreConfigHash}, got ${currentConfigHash}.`);
-    process.exit(1);
+    if (fromHex(keystoreProofs.keystoreConfigHash, "bigint") === 0n) {
+      console.log("The config hash is empty on the master chain. Syncing the confirmed config timestamp...");
+    } else {
+      console.warn(`The provided config data does not hash to the expected value. Expected ${keystoreProofs.keystoreConfigHash}, got ${currentConfigHash}.`);
+    }
   }
 
   // Check if we need to deploy the wallet before syncing.
