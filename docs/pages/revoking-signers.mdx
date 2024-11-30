@@ -5,35 +5,41 @@ description: Learn how to safely revoke signers and handle compromised signer sc
 
 # Revoking Signers
 
-## Preconfirming Revocations
+One of the hardest problems for cross-chain wallets is revoking compromised signers. Most cross-chain wallets have no single source of truth for the wallet's configuration, so revoking a compromised signer requires broadcasting the revocation across all active chains. Keyspace introduces the ability to sync configuration changes across chains, which is the first step towards making revoking compromised signers easier. However, there are still two avenues for a compromised signer to take control of a wallet:
 
-Preconfirmation is a security feature that allows you to prepare for signer revocation:
+1. The target replica chain is **actively** used by the wallet, so it has been synced, but using data from 3.5+ days ago due to the master chain's settlement delay.
+2. The target replica chain is **inactive** and has never been synced, so the configuration that contains the compromised signer is still valid on that chain, *no matter how much time has elapsed*. (This is not a Keyspace-specific issue: it's a problem for most cross-chain wallets.)
 
-1. **Pre-approval**: Set up revocation parameters before they're needed
-2. **Immediate Execution**: Quick revocation when necessary
-3. **Cross-chain Coordination**: Ensure revocation propagates correctly
+Keyspace handles the first scenario by allowing you to preconfirm revocations on active chains. The second scenario is currently infeasible to mitigate, so wallet vendors must understand the implications of revocations on inactive chains.
 
-## Compromised Signers
+## Preconfirming Revocations on Active Chains
 
-When a signer is compromised, quick action is needed across all chains:
+When a signer is being removed from a wallet, the wallet client must assist the user in preconfirming the revocation on all active chains to protect the wallet's assets. This is different from what happens when a new signer is added, where the wallet client only needs to preconfirm the new signer on any replica chains that the new signer wants to send user operations on.
+
+The easiest way to perform this action will typically be to send a bundle of cross-chain transactions for each chain within one transaction on a single chain. This avoids the need for gas fees to be paid on each chain, and avoids the need for an extra user operation signature for each chain. Instead, payment occurs on the single source chain for the cross-chain transactions.
+
+## Compromised Scenarios on Inactive Chains
+
+Wallet clients will typically not preconfirm revocations on known chains where the wallet has no assets or activity. In addition to those chains, there will always be new chains that launch after a signer is compromised.
+
+In the future, wallets will only be vulnerable for their eventual consistency period plus the settlement delay of the master chain. But currently, we recommend that wallet vendors skip their eventual consistency requirements when performing configuration updates to ensure that hard forks don't force the user to sync via expensive deposit and withdrawal transactions. That means that wallets with revoked signers will always be vulnerable on any chain that has not yet been synced. The attacker will always be able to replay enough preconfirmations to ensure that their key has been added to the wallet, then will be able to diverge from the master chain's configuration at will, including implementation upgrades that can completely change the wallet's behavior.
 
 ### Missed Chains
 
-If some chains weren't updated when a signer was compromised:
-- Use emergency revocation procedures
-- Sync revocation to missed chains immediately
-- Monitor for unauthorized transactions
+An attacker can use the compromised signer to take control of the wallet on any known chain where the revocation was not preconfirmed.
 
 ### New Chains
 
-For chains that become available after a signer was compromised:
-- Block compromised signers from activation
-- Implement additional verification steps
-- Use updated configuration only
+An attacker can take control of the wallet address on any new chain that is created after the signer was compromised.
 
 ### Rollups of Missed or New Chains
 
-Special considerations for rollups:
-1. **Inherited Security**: Understand how L1 security affects L2
-2. **Sync Timing**: Account for finality delays
-3. **Verification**: Ensure proper proof validation 
+An attacker can take control of the wallet address on any rollup of a missed or new chain.
+
+## Future Options for Inactive Chains
+
+Cost-effective syncing depends on cross-chain Merkle proofs, but these can break with each L1 or L2 hard fork. The fallback syncing method is to use withdrawal and deposit transactions, which require multiple transactions, include three transactions on L1 where gas is cost-prohibitive. If we can make the cross-chain Merkle proofs more robust, we can avoid the need for the fallback method.
+
+The top two paths for addressing this currently seem to be introducing EVM opcodes for direct cross-chain storage reads, or standardizing cross-chain Merkle proof validation contracts that are upgraded with each hard fork, just like the withdrawal and deposit bridges are. The [L1SLOAD opcode proposal](https://ethereum-magicians.org/t/rip-7728-l1sload-precompile/20388) would eliminate the risk of L1 hard forks. L2 hard forks would require a similar opcode, either for a widely used master chain for keystores or for a dedicated rollup for keystores. Such a `KEYSTORESLOAD` opcode would eliminate the risk of L2 hard forks.
+
+Once one of these paths are viable, we expect to change our recommendation to require a recent sync even before preconfirmations can be used, which would limit the window of time that a compromised signer can be used to the eventual consistency period plus the settlement delay of the master chain.
