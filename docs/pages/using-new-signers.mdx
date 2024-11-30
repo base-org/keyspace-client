@@ -5,42 +5,46 @@ description: Learn how to add and manage new signers in your Keyspace wallet
 
 # Using New Signers
 
-## Set and Sync Together
+When a new signer is configured, it's written directly to the master chain. But what if the new signer wants to start sending transactions on another chain? If that chain hasn't been synced recently, a sync will be necessary. And if the new signer was just added, that master chain block won't settle on L1 for 3.5 days (and up to 10 days in the case of optimistic rollup disputes).
 
-When adding a new signer to your wallet, you can perform the configuration update and sync operations in a single transaction. This approach:
-- Ensures immediate consistency across specified chains
-- Reduces the number of transactions needed
-- Provides better UX for end users
+To get make new signers usable immediately, Keyspace supports *preconfirmations*, which replay the `setConfig` call from the master chain as a `preconfirmConfig` call on a replica chain.
 
-## Sync via Wallet Vendor
+## Set, Sync, and Preconfirm via Wallet Vendor
 
-Wallet vendors can provide automated syncing services to improve user experience:
+The simplest scenario is when the wallet vendor takes care of setting the new configuration on the master chain and preconfirming it on the desired replica chains (and syncing replicas when necessary). The wallet vendor uses their own assets to pay for both actions, typically with individual transactions on each chain. (Other scenarios bundle cross-chain calls within a single user operation to minimize the number of signature prompts presented to the user, which isn't a consideration for the wallet vendor.)
 
-1. **Vendor Services**:
-   - Monitor master chain for configuration changes
-   - Automatically trigger syncs to replica chains
-   - Handle gas fees for sync operations
+A straightforward implementation of this method would have the wallet client send a request to the wallet vendor's backend to initiate the set, sync, and preconfirm calls, then the client's transaction would be sent after waiting for the transaction with the wallet vendor's calls to be confirmed in a block. To skip this wait, the wallet vendor can also act as the bundler for their users when a new signer is added. The set, sync, and preconfirm calls would then be called right before the user's user operation within the same transaction.
 
-2. **User Benefits**:
-   - Simplified onboarding
-   - Reduced complexity
-   - Better cross-chain experience 
+## Set, Sync, and Preconfirm with an Existing Signer
 
-## Sync with the New Signer
+The existing signer can take responsibility for setting the new configuration on the master chain. If they know which replica chain the new signer might send transactions on, they can preconfirm the configuration on that chain within the same user operation. The existing signer's options depend on where the wallet's assets are located:
 
-After adding a new signer, you'll need to ensure it can be used across all chains:
+1. If the wallet has no assets on the master chain, the existing signer can only set the new configuration via a cross-chain transaction from a replica chain with assets. In this scenario, the existing signer can preconfirm the configuration on that replica chain within the same user operation.
+2. If the wallet has assets on the master chain, the existing signer will typically just set the new configuration on the master chain without preconfirming on any replica chains.
+   - If the existing signer has been provided information about which replica chain(s) the new signer will send transactions on, they can preconfirm the configuration on those replica chains within the same user operation using cross-chain transactions from the master chain.
 
-1. **Initial Setup**: Configure the new signer on the master chain
-2. **Sync Process**: 
-   - Use Merkle proofs to sync to supported chains
-   - Use deposit/withdrawal for other chains
-3. **Verification**: Confirm the signer is active on all desired chains
+## Sync and Preconfirm with the New Signer
+
+When the existing signer is updating the configuration, the configuration needs to be set on the master chain and preconfirmed on the replica chain that the new signer wants to send transactions on. Since the new signer cannot be authorized to pay gas fees on any chain without violating [ERC-4337's storage restrictions](#erc-4337-validation-restrictions), another signer or a third party must pay for the configuration update on the master chain. In future releases, we expect that the new signer will be able to bundle all required configuration calls (set, sync, and preconfirm) alongside their own call on any desired chain.
+
+For now, the typical situation a new signer will find themselves in on a replica chain is that the new configuration has already been set on the master chain, but not on the replica chain that the new signer wants to send transactions on. The new signer can't yet pay gas fees on this replica chain, so to sync and  preconfirm the new configuration without anyone's help, a cross-chain transaction needs to be sent from the master chain (or any up-to-date replica chain with assets) to the desired replica chain. This can be bundled with the new signer's desired call on the replica chain, but it will still require two signature prompts to be presented to the user.
 
 ### ERC-4337 Validation Restrictions
 
-#### EIP-4788 Beacon Root Oracle
+The complications for handling new signers are caused by [ERC-4337's validation restrictions](https://eips.ethereum.org/EIPS/eip-4337), which are enumerated in [ERC 7562](https://eips.ethereum.org/EIPS/eip-7562). Syncing via Merkle proofs requires access to an L1 state root, which requires either cross-contract storage access or the `BLOCKHASH` opcode, which is also prohibited by ERC-4337. Preconfirmations do not require cross-contract storage access to process, but we expect that most preconfirmations will require a sync at the same time.
 
-Using 4788 still puts us in a pretty good place: each slot gets written less than once per day, so it's not really dangerous for bundlers to whitelist them and our proofs will have a long shelf life. It should be relatively straightforward to get popular bundlers and Conduit-style single-chain providers to whitelist all of these slots, and push for access to these slots to just be standardized everywhere.
+:::note
+ERC-4337 aggregators can take over validation duties for a wallet without any restrictions on cross-contract storage access because they are "staked entities." They can be blacklisted by bundlers when they misbehave, and ETH needs to be staked to set them up. Wallet vendors can write aggregators that handle syncing, which would allow new signers to pay the gas fees for their own configuration updates. Unfortunately, aggregators are not widely supported by bundlers yet.
+:::
 
-#### Aggregators
+#### Cross-Contract Storage Reads
 
+##### EIP-4788 Beacon Root Oracle
+
+[EIP-4788](https://eips.ethereum.org/EIPS/eip-4788) introduces a beacon root oracle that provides a large ring buffer of L1 beacon roots. L1 state roots are stored within the beacon chain as the "execution state root." Each slot gets written less than once per day, so it's not dangerous for bundlers to whitelist them. (In fact, we'd like to standardize access to EIP-4788's oracle during the ERC-4337 validation phase across all bundlers.)
+
+The large ring buffer gives proofs based on these roots a long shelf life. The beacon chain also has a useful [double-batched accumulator](https://eth2book.info/capella/part3/containers/state/) that makes proofs of any L1 state since the merge much more efficient.
+
+##### L1Block.hash
+
+On OP Stack chains, the latest hash for the parent chain is stored in the `L1Block` predeploy as `hash`. This value is updated once per parent chain block, which is too frequent for most bundlers to whitelist safely. (Note that while this predeploy is called `L1Block`, on L3 chains, it's expected to refer to the L2 chain.)
