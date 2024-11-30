@@ -7,7 +7,7 @@ description: Learn how to add and manage new signers in your Keyspace wallet
 
 When a new signer is configured, it's written directly to the master chain. But what if the new signer wants to start sending transactions on another chain? If that chain hasn't been synced recently, a sync will be necessary. And if the new signer was just added, that master chain block won't settle on L1 for 3.5 days (and up to 10 days in the case of optimistic rollup disputes).
 
-To get make new signers usable immediately, Keyspace supports *preconfirmations*, which replay the `setConfig` call from the master chain as a `preconfirmConfig` call on a replica chain.
+To get make new signers usable immediately, Keyspace supports *preconfirmations*, which replay the `setConfig` call from the master chain on a replica chain with the same arguments. The difference between `setConfig` on the master chain and `setConfig` on a replica chain is that if the replica chain's configuration conflicts with the master chain's configuration, the replica chain's configuration will eventually be overwritten during a sync.
 
 ## Set, Sync, and Preconfirm via Wallet Vendor
 
