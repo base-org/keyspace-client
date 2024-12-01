@@ -5,11 +5,11 @@ description: How to use Keyspace to build cross-chain wallets and other applicat
 
 # Getting Started
 
-Keyspace is a keystore for cross-chain smart wallets that keeps their configuration in sync. The primary goal of the project is to help wallet vendors build smart wallets that match the cross-chain user experience of externally-owned accounts in Ethereum: one address can be used on all current and future chains.
+Keyspace is a keystore for cross-chain smart wallets that keeps their configuration in sync. The primary goal of the project is to help wallet vendors build smart wallets that match the cross-chain user experience of externally-owned accounts in Ethereum: one address can be used on all current and future chains. Keyspace can also be used to build new wallet experiences where a user can manage many different accounts transparently share the same configuration.
 
-Since smart wallets typically store their configuration in their contract's storage, they've mostly been considered single-chain wallets where each instance has its own configuration and potentially a completely different address. We believe that ERC 4337 smart wallets are the future: passkey signers, paymasters, and batch transactions dramatically improve the experiences builders can provide for their users. But to deliver on that promise, we need users to be confident that assets sent to their Ethereum address are in their control, regardless of what chains those assets are on.
+We believe that ERC 4337 smart wallets are the future: passkey signers, paymasters, and batch transactions dramatically improve the experiences builders can provide for their users. But to deliver on that promise, we need users to be confident that assets sent to their Ethereum address are in their control, regardless of what chains those assets are on.
 
-Keyspace is built by the Base team as open, neutral infrastructure for all chains and wallets to rely on. It's inspired by Vitalik's initial design for a [dedicated minimal rollup for keystores](https://notes.ethereum.org/@vbuterin/minimal_keystore_rollup).
+Keyspace is built by the Base team as open, neutral infrastructure for all chains and wallets to rely on. It's inspired by Vitalik's initial design for a [dedicated minimal rollup for keystores](https://notes.ethereum.org/@vbuterin/minimal_keystore_rollup) and his vision for [cross-L2 interoperability improvements](https://vitalik.eth.limo/general/2024/10/17/futures2.html#6).
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/DibVD2gCyp8?si=OCBQbDiFRBuZaxs2" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
