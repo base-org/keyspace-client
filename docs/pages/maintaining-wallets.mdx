@@ -5,67 +5,76 @@ description: Learn how to manage wallet upgrades, new chains, and handle hard fo
 
 # Maintaining Wallets
 
+Beyond adding and removing signers, cross-chain syncing introduces additional considerations for wallet maintenance.
+
 ## Performing Wallet Upgrades
 
-Wallet upgrades require careful coordination across chains:
+A wallet's configuration is deeply intertwined with the implementation contract that reads that configuration. Upgrading a wallet's implementation alone could break if it could not read the existing configuration, and updating the configuration without upgrading the implementation could break if the new implementation expects a different configuration. Keyspace can help wallet vendors implement atomic upgrades that ensure both the configuration and the implementation are upgraded at the same time.
 
-1. **Preparation**:
-   - Test upgrade on testnet
-   - Verify cross-chain compatibility
-   - Prepare upgrade transactions
+To do this, the implementation address for the wallet can be stored in the keystore configuration that is synced across chains. Your wallet's [`_applyConfigHook`](/keystore-basics#_applyconfighook) is responsible for detecting the new implementation address and performing the upgrade. This new implementation address needs to be deployed on each chain supported by the wallet or the wallet will not be usable on those chains after syncing.
 
-2. **Execution**:
-   - Deploy new implementation
-   - Update master chain configuration
-   - Sync to replica chains
-
-3. **Verification**:
-   - Confirm successful upgrades
-   - Test functionality on all chains
-   - Monitor for issues
+:::note
+If your wallet provides direct access to `upgradeTo` or the equivalent for your proxy contract, the implementation can be overwritten without using Keyspace, and since this change will not be synced, the user will end up with inconsistent behavior across chains. Without care, this could lead to unexpected behavior.
+:::
 
 ## New Chains and Wallet Factories
 
-### Adding Support for New Chains
-
-When integrating with new chains:
-1. Deploy wallet factory contracts
-2. Configure chain-specific parameters
-3. Set up syncing mechanisms
+Most wallet clients provide an address-centric user experience where the user has the same address on all chains, just like they would with an externally owned account. Smart wallet addresses are forever tied to the factory contract that created them, so there always needs to be a path to start from scratch and end up with the latest wallet configuration on a new chain.
 
 ### Activating a New Chain
 
-To activate your wallet on a new chain with gas paid from an existing chain:
+To activate your wallet on a new chain, it must be freshly initialized by the original factory then synced with the latest configuration from the master chain. The path to accomplish this depends on the wallet's configuration history for the signer that is currently trying to activate the wallet.
 
-1. **Preparation**:
-   - Deploy necessary contracts
-   - Configure cross-chain messaging
-   - Set up gas fee handling
+If the signer was in the initial configuration, it's already authorized to pay gas fees on the new chain. It can sync to the latest configuration from the master chain and start signing transactions.
 
-2. **Activation Process**:
-   - Initialize wallet on new chain
-   - Fund gas from existing chain
-   - Verify activation
+If the signer was added to the configuration at any point, it will not have permission to pay gas fees on the new chain. The signer is back in the same situation they were in [when they were added to the wallet](/using-new-signers): the wallet vendor or an another existing signer can help them get synced, or they can sync themselves from another chain with assets.
 
-3. **Post-Activation**:
-   - Sync latest configuration
-   - Test functionality
-   - Monitor performance
+In either case, it's possible that syncing no longer works because hard forks have occurred on the master chain, the new replica chain, or any chain in between. If that has happened, the wallet can still be configured by replaying every configuration update from the master chain as a preconfirmation on the new chain. Assuming the wallet has upgraded its implementation to handle the hard forks, the preconfirmations will also upgrade the implementation on the new chain. A sync can then be performed to bring the wallet up to date and allow user operations to be executed.
+
+:::note
+If cross-chain Merkle proofs have stopped working due to hard forks, another way to restore syncing is via withdrawal and deposit transactions. This process is slow and costly, but is the most resilient method to sync wallets across rollups.
+:::
+
+#### Recovery Guardians
+
+Recovery guardians affect whether the wallet can be activated on a new chain. Recovery guardians are typically stateful: the recovery is initiated on a blockchain, then can only be processed after a delay that is verified by proving the elapsed time since the recovery was initiated. Since recovery guardians require external state to be verified, they are not guaranteed to always successfully re-execute as preconfirmations on new replica chains indefinitely.
+
+In the current version of Keyspace, the way to build a recovery guardian is to write it as a periphery contract that is added as a signer to the wallet. When the conditions for the guardian are met, it calls `setConfig` directly on the wallet. `_authorizeConfigUpdateHook` can then check `msg.sender` to verify that the guardian's address is authorized in the wallet's configuration.
+
+This type of configuration change is not as straightforward to re-execute on other chains: instead of just calling `setConfig` with each authorization proof, the user would need to call the recovery guardian itself to initiate the configuration change. In future versions of Keyspace, we're considering making block headers available to `setConfig`, which would allow recovery guardians to be implemented as extensions to a wallet's `_authorizeConfigUpdateHook` method. This would allow these recoveries to be re-executed as preconfirmations on other chains.
+
+No matter how recovery guardians are implemented, if they require state to be proven to authorize the recovery, they will need access to an L1 state root, which we expect to be fragile. The wallet's implementation contract at the time of the recovery has hard-coded logic for verifying the block header that is passed to the guardian. Once that logic is no longer valid due to a hard fork, the user will no longer be able to easily claim their wallet address on new chains. Syncing will still be possible via the slow, expensive fallback method of withdrawal and deposit transactions.
+
+Until cheap cross-chain state proofs are robust, we recommend that wallet vendors treat recovery guardians as a method of **asset recovery**, not as a method of **wallet recovery**. That is, once the guardian restores access to the wallet's assets, the user should be encouraged to create a new wallet address and move their assets to it.
+
+### Adding Support for New Chains
+
+To support as many chains as possible, wallet factories should aim for permissionless deployment without any admin keys for contract upgrades.
+
+* Deploy the original, current, and any intermediate wallet implementation contracts on the new chain
+* Deploy the wallet factory contract on the new chain
+* Configure the bundler for the new chain to whitelist [our cross-chain storage reads](/using-new-signers#cross-contract-storage-reads)
 
 ## Syncing after Hard Forks
+
+Wallet vendors must be prepared to review every hard fork on L1 and every rollup they support. When necessary, they should implement the changes required to upgrade the wallet's implementation of cross-chain Merkle proof verification. If the upgrade isn't performed before the fork, the wallet will need a preconfirmation to upgrade the implementation on each replica chain for any sync after the eventual consistency period ends, so the wallet client will need to present the user with a mandatory upgrade. (The implementation contract with broken cross-chain Merkle proof verification can still be used if the wallet is synced via withdrawal and deposit transactions, but since that's costly and slow, we expect wallet vendors to avoid this situation.)
+
+Here are the types of hard forks that wallet vendors should be prepared for:
 
 ### L1 Hard Forks
 
 * State Root changes (Verkle tree transition)
 
-### L2 Hard Forks
+### Master Chain Hard Forks
+
+* Any change to output roots
+* AnchorStateRegistry changes
+* DisputeGameFactory changes
+* DisputeGame changes
+
+### Replica Chain Hard Forks
 
 * State Root changes (Verkle tree transition)
-* L1 state root access on replica chains
+* L1 state root access
   * L1Block.hash changes
   * EIP 4788 changes
-* Master chain state root proofs
-  * Any change to output roots
-  * AnchorStateRegistry changes
-  * DisputeGameFactory changes
-  * DisputeGame changes
