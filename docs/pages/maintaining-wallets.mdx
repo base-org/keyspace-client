@@ -9,7 +9,7 @@ Beyond adding and removing signers, cross-chain syncing introduces additional co
 
 ## Performing Wallet Upgrades
 
-A wallet's configuration is deeply intertwined with the implementation contract that reads that configuration. Upgrading a wallet's implementation alone could break if it could not read the existing configuration, and updating the configuration without upgrading the implementation could break if the new implementation expects a different configuration. Keyspace can help wallet vendors implement atomic upgrades that ensure both the configuration and the implementation are upgraded at the same time.
+A wallet's configuration is deeply intertwined with the implementation contract that reads that configuration. Upgrading a wallet's implementation alone could break if it could not read the existing configuration, and updating the configuration without upgrading the implementation could break if the new implementation expects a new configuration. Keyspace can help wallet vendors implement atomic upgrades that ensure both the configuration and the implementation are upgraded at the same time.
 
 To do this, the implementation address for the wallet can be stored in the keystore configuration that is synced across chains. Your wallet's [`_applyConfigHook`](/keystore-basics#_applyconfighook) is responsible for detecting the new implementation address and performing the upgrade. This new implementation address needs to be deployed on each chain supported by the wallet or the wallet will not be usable on those chains after syncing.
 
