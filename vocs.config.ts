@@ -48,10 +48,6 @@ export default defineConfig({
       link: '/roadmap',
     },
     {
-      text: 'Gas Estimates',
-      link: '/gas-estimates',
-    },
-    {
       text: 'References',
       link: '/references',
     },
