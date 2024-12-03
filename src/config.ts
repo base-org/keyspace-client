@@ -72,11 +72,11 @@ type BuildNextConfigArgs = {
 
 export async function buildNextConfig(client: PublicClient, { account, currentConfigData, newConfigData }: BuildNextConfigArgs): Promise<KeystoreConfig> {
   const { configHash, configNonce } = await getMasterKeystoreStorage(client, account);
-  console.log("configHash", configHash);
-  console.log("configNonce", configNonce);
-  const expectedConfigHash = hashConfig({ account, nonce: configNonce, data: currentConfigData });
-  if (configHash !== expectedConfigHash) {
-    throw new Error(`Config hash mismatch: actual ${configHash} !== expected ${expectedConfigHash}`);
+  if (fromHex(configHash, "bigint") !== 0n) {
+    const expectedConfigHash = hashConfig({ account, nonce: configNonce, data: currentConfigData });
+    if (configHash !== expectedConfigHash) {
+      throw new Error(`Config hash mismatch: actual ${configHash} !== expected ${expectedConfigHash}`);
+    }
   }
 
   return {

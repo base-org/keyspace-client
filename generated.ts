@@ -481,7 +481,7 @@ export const accountAbi = [
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5716673E64B74E7D16FAd20c53B1687983b2E350)
+ * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x775062650652749c86686f68971F23Bb3FFf2b92)
  */
 export const accountFactoryAbi = [
   {
@@ -535,14 +535,14 @@ export const accountFactoryAbi = [
 ] as const
 
 /**
- * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5716673E64B74E7D16FAd20c53B1687983b2E350)
+ * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x775062650652749c86686f68971F23Bb3FFf2b92)
  */
 export const accountFactoryAddress = {
-  84532: '0x5716673E64B74E7D16FAd20c53B1687983b2E350',
+  84532: '0x775062650652749c86686f68971F23Bb3FFf2b92',
 } as const
 
 /**
- * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5716673E64B74E7D16FAd20c53B1687983b2E350)
+ * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x775062650652749c86686f68971F23Bb3FFf2b92)
  */
 export const accountFactoryConfig = {
   address: accountFactoryAddress,
