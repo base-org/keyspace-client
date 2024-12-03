@@ -46,7 +46,7 @@ async function main() {
     callsModule = callsWebAuthn;
     privateKey = P256.fromJWK(JSON.parse(args.private_key));
   } else {
-    console.error("Invalid circuit type");
+    console.error("Invalid signature type");
   }
 
   const amount = 1n;
