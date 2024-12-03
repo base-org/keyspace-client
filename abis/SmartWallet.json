@@ -293,6 +293,42 @@
   },
   {
     "type": "function",
+    "name": "hookIsNewConfigValid",
+    "inputs": [
+      {
+        "name": "newConfig",
+        "type": "tuple",
+        "internalType": "struct ConfigLib.Config",
+        "components": [
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      },
+      {
+        "name": "authorizationProof",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "implementation",
     "inputs": [],
     "outputs": [
@@ -449,41 +485,6 @@
   },
   {
     "type": "function",
-    "name": "preconfirmConfig",
-    "inputs": [
-      {
-        "name": "confirmedConfigHashIndex",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "newConfig",
-        "type": "tuple",
-        "internalType": "struct ConfigLib.Config",
-        "components": [
-          {
-            "name": "nonce",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "data",
-            "type": "bytes",
-            "internalType": "bytes"
-          }
-        ]
-      },
-      {
-        "name": "authorizationProof",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "proxiableUUID",
     "inputs": [],
     "outputs": [
@@ -536,7 +537,7 @@
         ]
       },
       {
-        "name": "authorizationProof",
+        "name": "authorizeAndValidateProof",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -561,36 +562,6 @@
     ],
     "outputs": [],
     "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "validateConfigUpdateHook",
-    "inputs": [
-      {
-        "name": "newConfig",
-        "type": "tuple",
-        "internalType": "struct ConfigLib.Config",
-        "components": [
-          {
-            "name": "nonce",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "data",
-            "type": "bytes",
-            "internalType": "bytes"
-          }
-        ]
-      },
-      {
-        "name": "authorizationProof",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -699,19 +670,6 @@
   },
   {
     "type": "event",
-    "name": "KeystoreConfigPreconfirmed",
-    "inputs": [
-      {
-        "name": "configHash",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "KeystoreConfigSet",
     "inputs": [
       {
@@ -738,15 +696,15 @@
   },
   {
     "type": "error",
-    "name": "BlockHashMismatch",
+    "name": "BeaconRootDoesNotMatch",
     "inputs": [
       {
-        "name": "l1Blockhash",
+        "name": "expected",
         "type": "bytes32",
         "internalType": "bytes32"
       },
       {
-        "name": "expectedL1BlockHash",
+        "name": "actual",
         "type": "bytes32",
         "internalType": "bytes32"
       }
@@ -754,22 +712,12 @@
   },
   {
     "type": "error",
-    "name": "ConfirmedConfigHashNotFound",
+    "name": "BeaconRootsOracleCallFailed",
     "inputs": [
       {
-        "name": "confirmedConfigHashIndex",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "preConfirmedConfigHashAtIndex",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "expectedConfirmedConfigHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "callData",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ]
   },
@@ -796,24 +744,13 @@
   },
   {
     "type": "error",
-    "name": "InitialNonceIsNotZero",
+    "name": "ExecutionBlockHashMerkleProofFailed",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "InvalidBlockHeader",
-    "inputs": [
-      {
-        "name": "blockHeaderHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "blockHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
+    "name": "InitialNonceIsNotZero",
+    "inputs": []
   },
   {
     "type": "error",
@@ -844,12 +781,28 @@
   },
   {
     "type": "error",
-    "name": "InvalidKeystoreConfigUpdate",
-    "inputs": []
+    "name": "InvalidL2BlockHeader",
+    "inputs": [
+      {
+        "name": "blockHeaderHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "blockHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
   },
   {
     "type": "error",
     "name": "InvalidL2OutputRootPreimages",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidNewKeystoreConfig",
     "inputs": []
   },
   {
@@ -876,8 +829,35 @@
   },
   {
     "type": "error",
+    "name": "InvalidProofType",
+    "inputs": [
+      {
+        "name": "proofType",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "KeystoreAlreadyInitialized",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "L1BlockHashMismatch",
+    "inputs": [
+      {
+        "name": "l1Blockhash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "expectedL1BlockHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
   },
   {
     "type": "error",
@@ -894,11 +874,6 @@
         "internalType": "uint256"
       }
     ]
-  },
-  {
-    "type": "error",
-    "name": "NotOnMasterChain",
-    "inputs": []
   },
   {
     "type": "error",
@@ -933,7 +908,7 @@
   },
   {
     "type": "error",
-    "name": "UnauthorizedKeystoreConfigUpdate",
+    "name": "UnauthorizedNewKeystoreConfig",
     "inputs": []
   },
   {

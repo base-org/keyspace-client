@@ -151,6 +151,24 @@ export const accountAbi = [
   },
   {
     type: 'function',
+    inputs: [
+      {
+        name: 'newConfig',
+        internalType: 'struct ConfigLib.Config',
+        type: 'tuple',
+        components: [
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'data', internalType: 'bytes', type: 'bytes' },
+        ],
+      },
+      { name: 'authorizationProof', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'hookIsNewConfigValid',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'implementation',
     outputs: [{ name: '$', internalType: 'address', type: 'address' }],
@@ -223,29 +241,6 @@ export const accountAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      {
-        name: 'confirmedConfigHashIndex',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-      {
-        name: 'newConfig',
-        internalType: 'struct ConfigLib.Config',
-        type: 'tuple',
-        components: [
-          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'authorizationProof', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'preconfirmConfig',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     inputs: [],
     name: 'proxiableUUID',
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
@@ -270,7 +265,11 @@ export const accountAbi = [
           { name: 'data', internalType: 'bytes', type: 'bytes' },
         ],
       },
-      { name: 'authorizationProof', internalType: 'bytes', type: 'bytes' },
+      {
+        name: 'authorizeAndValidateProof',
+        internalType: 'bytes',
+        type: 'bytes',
+      },
     ],
     name: 'setConfig',
     outputs: [],
@@ -285,24 +284,6 @@ export const accountAbi = [
     name: 'upgradeToAndCall',
     outputs: [],
     stateMutability: 'payable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'newConfig',
-        internalType: 'struct ConfigLib.Config',
-        type: 'tuple',
-        components: [
-          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-          { name: 'data', internalType: 'bytes', type: 'bytes' },
-        ],
-      },
-      { name: 'authorizationProof', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'validateConfigUpdateHook',
-    outputs: [],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -376,19 +357,6 @@ export const accountAbi = [
         indexed: true,
       },
     ],
-    name: 'KeystoreConfigPreconfirmed',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'configHash',
-        internalType: 'bytes32',
-        type: 'bytes32',
-        indexed: true,
-      },
-    ],
     name: 'KeystoreConfigSet',
   },
   {
@@ -407,31 +375,15 @@ export const accountAbi = [
   {
     type: 'error',
     inputs: [
-      { name: 'l1Blockhash', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'expectedL1BlockHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'expected', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'actual', internalType: 'bytes32', type: 'bytes32' },
     ],
-    name: 'BlockHashMismatch',
+    name: 'BeaconRootDoesNotMatch',
   },
   {
     type: 'error',
-    inputs: [
-      {
-        name: 'confirmedConfigHashIndex',
-        internalType: 'uint256',
-        type: 'uint256',
-      },
-      {
-        name: 'preConfirmedConfigHashAtIndex',
-        internalType: 'bytes32',
-        type: 'bytes32',
-      },
-      {
-        name: 'expectedConfirmedConfigHash',
-        internalType: 'bytes32',
-        type: 'bytes32',
-      },
-    ],
-    name: 'ConfirmedConfigHashNotFound',
+    inputs: [{ name: 'callData', internalType: 'bytes', type: 'bytes' }],
+    name: 'BeaconRootsOracleCallFailed',
   },
   {
     type: 'error',
@@ -450,15 +402,8 @@ export const accountAbi = [
     name: 'ConfirmedConfigOutdated',
   },
   { type: 'error', inputs: [], name: 'ConfirmedConfigTooOld' },
+  { type: 'error', inputs: [], name: 'ExecutionBlockHashMerkleProofFailed' },
   { type: 'error', inputs: [], name: 'InitialNonceIsNotZero' },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'blockHeaderHash', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'blockHash', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'InvalidBlockHeader',
-  },
   {
     type: 'error',
     inputs: [
@@ -476,8 +421,16 @@ export const accountAbi = [
     inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
     name: 'InvalidEthereumAddressOwner',
   },
-  { type: 'error', inputs: [], name: 'InvalidKeystoreConfigUpdate' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'blockHeaderHash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'blockHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'InvalidL2BlockHeader',
+  },
   { type: 'error', inputs: [], name: 'InvalidL2OutputRootPreimages' },
+  { type: 'error', inputs: [], name: 'InvalidNewKeystoreConfig' },
   {
     type: 'error',
     inputs: [{ name: 'key', internalType: 'uint256', type: 'uint256' }],
@@ -488,7 +441,20 @@ export const accountAbi = [
     inputs: [{ name: 'owner', internalType: 'bytes', type: 'bytes' }],
     name: 'InvalidOwnerBytesLength',
   },
+  {
+    type: 'error',
+    inputs: [{ name: 'proofType', internalType: 'uint8', type: 'uint8' }],
+    name: 'InvalidProofType',
+  },
   { type: 'error', inputs: [], name: 'KeystoreAlreadyInitialized' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'l1Blockhash', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'expectedL1BlockHash', internalType: 'bytes32', type: 'bytes32' },
+    ],
+    name: 'L1BlockHashMismatch',
+  },
   {
     type: 'error',
     inputs: [
@@ -497,7 +463,6 @@ export const accountAbi = [
     ],
     name: 'NonceNotIncrementedByOne',
   },
-  { type: 'error', inputs: [], name: 'NotOnMasterChain' },
   { type: 'error', inputs: [], name: 'NotOnReplicaChain' },
   {
     type: 'error',
@@ -507,7 +472,7 @@ export const accountAbi = [
   { type: 'error', inputs: [], name: 'Unauthorized' },
   { type: 'error', inputs: [], name: 'UnauthorizedCallContext' },
   { type: 'error', inputs: [], name: 'UnauthorizedCaller' },
-  { type: 'error', inputs: [], name: 'UnauthorizedKeystoreConfigUpdate' },
+  { type: 'error', inputs: [], name: 'UnauthorizedNewKeystoreConfig' },
   { type: 'error', inputs: [], name: 'UpgradeFailed' },
 ] as const
 
@@ -516,8 +481,7 @@ export const accountAbi = [
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * - [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5987f89b6BD73229056e3D2822E47Cae906CdBd9)
- * - [__View Contract on Optimism Sepolia Blockscout__](https://optimism-sepolia.blockscout.com/address/0x4Ca895d26b7eb26a9D980565732049d4199f32C8)
+ * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5716673E64B74E7D16FAd20c53B1687983b2E350)
  */
 export const accountFactoryAbi = [
   {
@@ -555,16 +519,6 @@ export const accountFactoryAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: 'initialConfigHash', internalType: 'bytes32', type: 'bytes32' },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getAddressByHash',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [],
     name: 'implementation',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -581,17 +535,14 @@ export const accountFactoryAbi = [
 ] as const
 
 /**
- * - [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5987f89b6BD73229056e3D2822E47Cae906CdBd9)
- * - [__View Contract on Optimism Sepolia Blockscout__](https://optimism-sepolia.blockscout.com/address/0x4Ca895d26b7eb26a9D980565732049d4199f32C8)
+ * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5716673E64B74E7D16FAd20c53B1687983b2E350)
  */
 export const accountFactoryAddress = {
-  84532: '0x5987f89b6BD73229056e3D2822E47Cae906CdBd9',
-  11155420: '0x4Ca895d26b7eb26a9D980565732049d4199f32C8',
+  84532: '0x5716673E64B74E7D16FAd20c53B1687983b2E350',
 } as const
 
 /**
- * - [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5987f89b6BD73229056e3D2822E47Cae906CdBd9)
- * - [__View Contract on Optimism Sepolia Blockscout__](https://optimism-sepolia.blockscout.com/address/0x4Ca895d26b7eb26a9D980565732049d4199f32C8)
+ * [__View Contract on Base Sepolia Blockscout__](https://base-sepolia.blockscout.com/address/0x5716673E64B74E7D16FAd20c53B1687983b2E350)
  */
 export const accountFactoryConfig = {
   address: accountFactoryAddress,
