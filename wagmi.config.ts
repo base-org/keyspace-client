@@ -12,8 +12,8 @@ export default defineConfig({
     {
       abi: smartWalletFactoryABI,
       address: {
-        [baseSepolia.id]: "0x5987f89b6BD73229056e3D2822E47Cae906CdBd9",
-        [optimismSepolia.id]: "0x4Ca895d26b7eb26a9D980565732049d4199f32C8",
+        [baseSepolia.id]: "0x5716673E64B74E7D16FAd20c53B1687983b2E350",
+        // [optimismSepolia.id]: "0x4Ca895d26b7eb26a9D980565732049d4199f32C8",
       },
       name: "AccountFactory",
     },
