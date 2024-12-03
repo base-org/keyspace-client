@@ -64,14 +64,6 @@ export function buildConfirmConfigCalldata(config: KeystoreConfig, keystoreProof
   });
 }
 
-export function buildPreconfirmConfigCalldata(config: KeystoreConfig, authorizationProof: Hex, confirmedConfigHashIndex: bigint) {
-  return encodeFunctionData({
-    abi: accountAbi,
-    functionName: "preconfirmConfig",
-    args: [confirmedConfigHashIndex, config, authorizationProof],
-  });
-}
-
 type BuildNextConfigArgs = {
   account: Address;
   currentConfigData: Hex;
