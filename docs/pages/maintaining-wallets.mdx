@@ -78,3 +78,11 @@ Here are the types of hard forks that wallet vendors should be prepared for:
 * L1 state root access
   * L1Block.hash changes
   * EIP 4788 changes
+
+:::note
+Hard forks forced a design compromise in Keyspace: eventual consistency is not enforced for configuration changes to allow contracts to be upgraded when syncing is broken. This currently prevents signer revocations from being finalized through syncing on all current and future chains, which is an end goal for most wallet designs.
+
+If syncing were required for configuration changes, the wallet would be forced to rely on the slow, expensive fallback method of withdrawal and deposit transactions to sync wallets across hard forks. To understand what this would look like, here's an example dialog that might be presented to a user:
+
+> Your account needs to be restored due to inactivity. Restoring your account will take about four days, and requires paying a gas fee of $30 on Ethereum mainnet.
+:::
