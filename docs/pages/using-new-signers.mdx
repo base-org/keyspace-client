@@ -9,25 +9,19 @@ When a new signer is configured, it's written directly to the master chain. But 
 
 To get make new signers usable immediately, Keyspace supports *preconfirmations*, which replay the `setConfig` call from the master chain on a replica chain with the same arguments. The difference between `setConfig` on the master chain and `setConfig` on a replica chain is that if the replica chain's configuration conflicts with the master chain's configuration, the replica chain's configuration will eventually be overwritten during a sync.
 
-## Set, Sync, and Preconfirm via Wallet Vendor
-
-The simplest scenario is when the wallet vendor takes care of setting the new configuration on the master chain and preconfirming it on the desired replica chains (and syncing replicas when necessary). The wallet vendor uses their own assets to pay for both actions, typically with individual transactions on each chain. (Other scenarios bundle cross-chain calls within a single user operation to minimize the number of signature prompts presented to the user, which isn't a consideration for the wallet vendor.)
-
-A straightforward implementation of this method would have the wallet client send a request to the wallet vendor's backend to initiate the set, sync, and preconfirm calls, then the client's transaction would be sent after waiting for the transaction with the wallet vendor's calls to be confirmed in a block. To skip this wait, the wallet vendor can also act as the bundler for their users when a new signer is added. The set, sync, and preconfirm calls would then be called right before the user's user operation within the same transaction.
-
-## Set, Sync, and Preconfirm with an Existing Signer
-
-The existing signer can take responsibility for setting the new configuration on the master chain. If they know which replica chain the new signer might send transactions on, they can preconfirm the configuration on that chain within the same user operation. The existing signer's options depend on where the wallet's assets are located:
-
-1. If the wallet has no assets on the master chain, the existing signer can only set the new configuration via a cross-chain transaction from a replica chain with assets. In this scenario, the existing signer can preconfirm the configuration on that replica chain within the same user operation.
-2. If the wallet has assets on the master chain, the existing signer will typically just set the new configuration on the master chain without preconfirming on any replica chains.
-   - If the existing signer has been provided information about which replica chain(s) the new signer will send transactions on, they can preconfirm the configuration on those replica chains within the same user operation using cross-chain transactions from the master chain.
-
 ## Sync and Preconfirm with the New Signer
 
-When the existing signer is updating the configuration, the configuration needs to be set on the master chain and preconfirmed on the replica chain that the new signer wants to send transactions on. Since the new signer cannot be authorized to pay gas fees on any chain without violating [ERC-4337's storage restrictions](#erc-4337-validation-restrictions), another signer or a third party must pay for the configuration update on the master chain. In future releases, we expect that the new signer will be able to bundle all required configuration calls (set, sync, and preconfirm) alongside their own call on any desired chain.
+When the existing signer is updating the configuration, the configuration needs to be set on the master chain and preconfirmed on the replica chain that the new signer wants to send transactions on. The replica chain usually needs a sync as well to meet the wallet's eventual consistency requirements.
 
-For now, the typical situation a new signer will find themselves in on a replica chain is that the new configuration has already been set on the master chain, but not on the replica chain that the new signer wants to send transactions on. The new signer can't yet pay gas fees on this replica chain, so to sync and  preconfirm the new configuration without anyone's help, a cross-chain transaction needs to be sent from the master chain (or any up-to-date replica chain with assets) to the desired replica chain. This can be bundled with the new signer's desired call on the replica chain, but it will still require two signature prompts to be presented to the user.
+The new signer will typically preconfirm its own configuration change during the validation phase of ERC-4337 because it doesn't need to rely on any external state to do so. However, the new signer cannot perform a sync from the master chain **during the validation phase** without violating [ERC-4337's storage restrictions](#erc-4337-validation-restrictions).
+
+:::note
+Our current recommendation is to perform syncs from the master chain **during the execution phase** of ERC-4337 transactions rather than during the validation phase. Syncing during the validation phase currently has no benefit for Keyspace wallets. It cannot be used to enforce signer revocations because preconfirmations are allowed without a sync, and preconfirmations can change the whole implementation of the wallet.
+
+Once cheap, fast cross-chain state proofs are robust, we expect that wallets will want to require syncs during the validation phase to enforce signer revocations.
+:::
+
+Executing a sync during the validation phase requires whitelisting cross-contract storage reads, having another signer or a third-party wallet execute the sync, or executing the sync via a cross-chain transaction. Cross-chain transactions can be sent from the master chain (or any up-to-date replica chain with assets) to the desired replica chain. This can be bundled with the new signer's desired call on the replica chain, but it will still require two signature prompts to be presented to the user.
 
 ### ERC-4337 Validation Restrictions
 
@@ -48,3 +42,18 @@ The large ring buffer gives proofs based on these roots a long shelf life. The b
 ##### L1Block.hash
 
 On OP Stack chains, the latest hash for the parent chain is stored in the `L1Block` predeploy as `hash`. This value is updated once per parent chain block, which is too frequent for most bundlers to whitelist safely. (Note that while this predeploy is called `L1Block`, on L3 chains, it's expected to refer to the L2 chain.)
+
+
+## Set, Sync, and Preconfirm via Wallet Vendor
+
+The simplest scenario is when the wallet vendor takes care of setting the new configuration on the master chain and preconfirming it on the desired replica chains (and syncing replicas when necessary). The wallet vendor uses their own assets to pay for both actions, typically with individual transactions on each chain. (Other scenarios bundle cross-chain calls within a single user operation to minimize the number of signature prompts presented to the user, which isn't a consideration for the wallet vendor.)
+
+A straightforward implementation of this method would have the wallet client send a request to the wallet vendor's backend to initiate the set, sync, and preconfirm calls, then the client's transaction would be sent after waiting for the transaction with the wallet vendor's calls to be confirmed in a block. To skip this wait, the wallet vendor can also act as the bundler for their users when a new signer is added. The set, sync, and preconfirm calls would then be called right before the user's user operation within the same transaction.
+
+## Set, Sync, and Preconfirm with an Existing Signer
+
+The existing signer can take responsibility for setting the new configuration on the master chain. If they know which replica chain the new signer might send transactions on, they can preconfirm the configuration on that chain within the same user operation. The existing signer's options depend on where the wallet's assets are located:
+
+1. If the wallet has no assets on the master chain, the existing signer can only set the new configuration via a cross-chain transaction from a replica chain with assets. In this scenario, the existing signer can preconfirm the configuration on that replica chain within the same user operation.
+2. If the wallet has assets on the master chain, the existing signer will typically just set the new configuration on the master chain without preconfirming on any replica chains.
+   - If the existing signer has been provided information about which replica chain(s) the new signer will send transactions on, they can preconfirm the configuration on those replica chains within the same user operation using cross-chain transactions from the master chain.
