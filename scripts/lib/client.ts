@@ -10,7 +10,7 @@ export const client: PublicClient = createPublicClient({
   transport: http(
     process.env.RPC_URL || ""
   ),
-});
+}) as PublicClient;
 
 export const masterClient: PublicClient = client;
 

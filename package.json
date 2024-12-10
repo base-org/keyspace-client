@@ -1,8 +1,8 @@
 {
   "name": "keyspace",
-  "module": "src/index.ts",
   "type": "module",
   "scripts": {
+    "build": "tsc",
     "docs:dev": "vocs dev",
     "docs:build": "vocs build",
     "docs:preview": "vocs preview"

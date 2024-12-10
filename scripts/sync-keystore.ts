@@ -61,14 +61,14 @@ async function main() {
   const replicaClient: PublicClient = createPublicClient({
     chain: replicaChain,
     transport: http(),
-  });
+  }) as PublicClient;
 
   const masterChainId = await getMasterChainId(replicaClient);
   const masterChain = Object.values(chains).find((chain) => BigInt(chain.id) === masterChainId);
   const masterClient: PublicClient = createPublicClient({
     chain: masterChain,
     transport: http(),
-  });
+  }) as PublicClient;
 
   // Query the master chain and L1 for proofs of the config hash.
   const keystoreProofs = await getMasterKeystoreProofs(args.account, masterClient, replicaClient, l1Client);
