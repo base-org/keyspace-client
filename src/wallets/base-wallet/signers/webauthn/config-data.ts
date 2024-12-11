@@ -14,6 +14,16 @@ export function getConfigDataForPrivateKey(privateKey: any): CoinbaseSmartWallet
 }
 
 /**
+ * Encodes the given public key as the raw bytes of the Base Wallet config data format.
+ * 
+ * @param publicKey - The public key as a Uint8Array.
+ * @returns The config data as a hex string.
+ */
+export function getConfigDataForPublicKey(publicKey: Uint8Array): CoinbaseSmartWalletConfigData {
+  return { owners: [toHex(publicKey)] };
+}
+
+/**
  * Serializes a P256 public key into the 64-byte array that Base Wallet expects.
  *
  * @param x - The x coordinate of the public key as a Uint8Array.
