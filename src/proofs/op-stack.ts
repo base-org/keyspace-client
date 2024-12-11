@@ -1,6 +1,7 @@
 import { PublicClient, type Hex, keccak256, encodeAbiParameters, toHex, toRlp, Address, fromHex } from "viem";
 import { readContract } from "viem/actions";
 import { anchorStateRegistryAbi, anchorStateRegistryAddress, l1BlockAbi, l1BlockAddress } from "../../generated";
+import { createCustomClient, ProviderClientConfig } from "../client";
 
 type CrossChainProofBlockNumbers = {
   masterBlockNumber: bigint;
@@ -139,7 +140,8 @@ type OPStackProofData = {
  * @returns A promise that resolves to an object containing the L2 block header RLP, 
  *          the L1 block account proof, and the L1 block storage proof.
  */
-async function getOPStackL1BlockProof(client: PublicClient, blockNumber: bigint): Promise<OPStackProofData> {
+async function getOPStackL1BlockProof(provider: ProviderClientConfig, blockNumber: bigint): Promise<OPStackProofData> {
+  const client = createCustomClient(provider);
   const l2BlockHeaderRlp = await getBlockHeaderRlp(client, blockNumber);
   // cast storage 0x4200000000000000000000000000000000000015 --rpc-url https://sepolia.base.org
   const l1BlockHashSlot = BigInt(2);
@@ -208,7 +210,8 @@ function encodeOPStackL1BlockProof(l1BlockProof: OPStackProofData): L1BlockHashP
  * @throws Will throw an error if the block header hash does not match the expected hash.
  */
 
-async function getBlockHeaderRlp(client: PublicClient, blockNumber: bigint) {
+async function getBlockHeaderRlp(provider: ProviderClientConfig, blockNumber: bigint) {
+  const client = createCustomClient(provider);
   const blockHeader = await client.getBlock({ blockNumber });
   const fields: Hex[] = [
     blockHeader.parentHash,
@@ -272,7 +275,8 @@ async function getAnchorStateRegistryProof(l1Client: PublicClient, l1BlockNumber
  * @param blockNumber - The block number for which to retrieve the output root preimage.
  * @returns An object containing the state root, block hash, and message passer storage root.
  */
-async function getOutputRootPreimages(client: PublicClient, blockNumber: bigint) {
+async function getOutputRootPreimages(provider: ProviderClientConfig, blockNumber: bigint) {
+  const client = createCustomClient(provider);
   const messagePasserAddress = "0x4200000000000000000000000000000000000016";
   const messagePasserProof = await client.getProof({
     address: messagePasserAddress,

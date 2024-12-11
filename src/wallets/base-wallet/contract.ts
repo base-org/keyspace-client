@@ -1,14 +1,16 @@
-import { Address, Client } from "viem";
+import { Address } from "viem";
 import { getCode, readContract } from "viem/actions";
 import { accountAbi, accountFactoryAbi, accountFactoryAddress } from "../../../generated";
+import { createCustomClient, ProviderClientConfig } from "../../client";
 
-
-export async function getIsDeployed(client: Client, address: Address): Promise<boolean> {
+export async function getIsDeployed(provider: ProviderClientConfig, address: Address): Promise<boolean> {
+  const client = createCustomClient(provider);
   const codeAtAddress = await getCode(client, { address });
   return codeAtAddress != undefined && codeAtAddress !== "0x";
 }
 
-export async function getMasterChainId(client: Client) {
+export async function getMasterChainId(provider: ProviderClientConfig) {
+  const client = createCustomClient(provider);
   if (!client.chain?.id) {
     throw new Error("Chain not found");
   }

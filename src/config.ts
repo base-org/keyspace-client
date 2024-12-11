@@ -1,6 +1,8 @@
 import { Address, encodeAbiParameters, encodeFunctionData, encodePacked, fromHex, Hex, keccak256, PublicClient, toHex } from "viem";
 import { accountAbi } from "../generated";
 import { MASTER_KEYSTORE_STORAGE_LOCATION } from "./proofs/op-stack";
+import { createCustomClient } from "./client";
+import { ProviderClientConfig } from "./client";
 
 export type KeystoreConfig = {
   account: Address;
@@ -32,7 +34,8 @@ export function hashConfig({ account, nonce, data }: KeystoreConfig): Hex {
  * @returns The current nonce for the keystore account.
  */
 
-export async function getMasterKeystoreStorage(client: PublicClient, account: Address): Promise<MasterKeystoreStorage> {
+export async function getMasterKeystoreStorage(provider: ProviderClientConfig, account: Address): Promise<MasterKeystoreStorage> {
+  const client = createCustomClient(provider);
   const configHashSlot = toHex(fromHex(MASTER_KEYSTORE_STORAGE_LOCATION, "bigint") + 0n);
   const configNonceSlot = toHex(fromHex(MASTER_KEYSTORE_STORAGE_LOCATION, "bigint") + 1n);
 
@@ -70,8 +73,8 @@ type BuildNextConfigArgs = {
   newConfigData: Hex;
 };
 
-export async function buildNextConfig(client: PublicClient, { account, currentConfigData, newConfigData }: BuildNextConfigArgs): Promise<KeystoreConfig> {
-  const { configHash, configNonce } = await getMasterKeystoreStorage(client, account);
+export async function buildNextConfig(provider: ProviderClientConfig, { account, currentConfigData, newConfigData }: BuildNextConfigArgs): Promise<KeystoreConfig> {
+  const { configHash, configNonce } = await getMasterKeystoreStorage(provider, account);
   if (fromHex(configHash, "bigint") !== 0n) {
     const expectedConfigHash = hashConfig({ account, nonce: configNonce, data: currentConfigData });
     if (configHash !== expectedConfigHash) {
