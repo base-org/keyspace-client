@@ -1,7 +1,7 @@
-import { Address } from "viem";
+import { Address, encodeFunctionData, PublicClient } from "viem";
 import { getCode, readContract } from "viem/actions";
-import { accountAbi, accountFactoryAbi, accountFactoryAddress } from "../../../generated";
-import { createCustomClient, ProviderClientConfig } from "../../client";
+import { accountAbi, accountFactoryAbi, accountFactoryAddress } from "@generated";
+import { createCustomClient, ProviderClientConfig } from "@/client";
 
 export async function getIsDeployed(provider: ProviderClientConfig, address: Address): Promise<boolean> {
   const client = createCustomClient(provider);

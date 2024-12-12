@@ -5,8 +5,12 @@
     "target": "esnext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
+    "outDir": "./dist",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@generated": ["./generated.ts"],
+      "@scripts/*": ["./scripts/*"]
+    },
     "composite": true,
     "strict": true,
     "downlevelIteration": true,
@@ -18,5 +22,7 @@
     "types": [
       "bun-types" // add Bun global
     ]
-  }
+  },
+  "include": ["**/*.ts", "**/*.json"],
+  "exclude": ["node_modules", "dist", "docs"]
 }

@@ -1,14 +1,14 @@
 import { Address, encodeAbiParameters, Hex } from "viem";
 const P256 = require("ecdsa-secp256r1");
 
-import { entryPointAddress } from "../../../../../generated";
+import { entryPointAddress } from "@generated";
 import { getConfigDataForPrivateKey } from "./config-data";
 import { P256PrivateKey, signAndWrap } from "./sign";
-import { buildUserOp, Call, getUserOpHash } from "../../user-op";
-import { bundlerClient, chain, client } from "../../../../../scripts/lib/client";
-import { encodeConfigData } from "../../config";
+import { buildUserOp, Call, getUserOpHash } from "@/wallets/base-wallet/user-op";
+import { bundlerClient, chain, client } from "@scripts/lib/client";
+import { encodeConfigData } from "@/wallets/base-wallet/config";
 import { buildDummySignature } from "./signatures";
-import { hashConfig, KeystoreConfig } from "../../../../config";
+import { hashConfig, KeystoreConfig } from "@/config";
 
 const jwk = JSON.parse(process.env.P256_JWK || "");
 export const p256PrivateKey: P256PrivateKey = P256.fromJWK(jwk);

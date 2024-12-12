@@ -1,8 +1,9 @@
 {
   "name": "keyspace",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "docs:dev": "vocs dev",
     "docs:build": "vocs build",
     "docs:preview": "vocs preview"
@@ -10,7 +11,8 @@
   "devDependencies": {
     "@types/argparse": "^2.0.16",
     "@wagmi/cli": "^2.1.0",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "tsc-alias": "^1.8.10"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -25,5 +27,12 @@
     "permissionless": "^0.0.34",
     "viem": "^2.21.40",
     "vocs": "^1.0.0-alpha.52"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": "./dist/*.js"
   }
 }

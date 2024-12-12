@@ -1,8 +1,7 @@
 import { Address, encodeAbiParameters, encodeFunctionData, encodePacked, fromHex, Hex, keccak256, PublicClient, toHex } from "viem";
-import { accountAbi } from "../generated";
-import { MASTER_KEYSTORE_STORAGE_LOCATION } from "./proofs/op-stack";
-import { createCustomClient } from "./client";
-import { ProviderClientConfig } from "./client";
+import { accountAbi } from "@generated";
+import { MASTER_KEYSTORE_STORAGE_LOCATION } from "@/proofs/op-stack";
+import { createCustomClient, ProviderClientConfig } from "@/client";
 
 export type KeystoreConfig = {
   account: Address;

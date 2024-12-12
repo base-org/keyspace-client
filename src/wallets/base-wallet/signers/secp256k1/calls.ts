@@ -1,13 +1,13 @@
 import { Address, encodeAbiParameters, Hex } from "viem";
 
-import { entryPointAddress } from "../../../../../generated";
+import { entryPointAddress } from "@generated";
 import { getConfigDataForPrivateKey } from "./config-data";
-import { buildUserOp, Call, getUserOpHash } from "../../user-op";
-import { client, chain, bundlerClient } from "../../../../../scripts/lib/client";
+import { buildUserOp, Call, getUserOpHash } from "@/wallets/base-wallet/user-op";
+import { client, chain, bundlerClient } from "@scripts/lib/client";
 import { signAndWrap } from "./sign";
-import { encodeConfigData } from "../../config";
+import { encodeConfigData } from "@/wallets/base-wallet/config";
 import { buildDummySignature } from "./signatures";
-import { hashConfig, KeystoreConfig } from "../../../../config";
+import { hashConfig, KeystoreConfig } from "@/config";
 
 export type MakeCallsParameters = {
   account: Address;

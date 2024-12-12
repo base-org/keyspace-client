@@ -1,7 +1,7 @@
 import { PublicClient, type Hex, keccak256, encodeAbiParameters, toHex, toRlp, Address, fromHex } from "viem";
 import { readContract } from "viem/actions";
-import { anchorStateRegistryAbi, anchorStateRegistryAddress, l1BlockAbi, l1BlockAddress } from "../../generated";
-import { createCustomClient, ProviderClientConfig } from "../client";
+import { anchorStateRegistryAbi, anchorStateRegistryAddress, l1BlockAbi, l1BlockAddress } from "@generated";
+import { createCustomClient, ProviderClientConfig } from "@/client";
 
 type CrossChainProofBlockNumbers = {
   masterBlockNumber: bigint;

@@ -2,9 +2,9 @@ import { estimateUserOperationGas, getRequiredPrefund, UserOperation } from "per
 import { Address, createPublicClient, custom, EIP1193Provider, encodeAbiParameters, encodeFunctionData, formatEther, fromHex, Hex, keccak256, PublicClient } from "viem";
 import * as chains from "viem/chains";
 import { estimateFeesPerGas, readContract } from "viem/actions";
-import { accountAbi, accountFactoryAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "../../../generated";
+import { accountAbi, accountFactoryAbi, accountFactoryAddress, entryPointAbi, entryPointAddress } from "@generated";
 import { getIsDeployed } from "./contract";
-import { createCustomClient, ProviderClientConfig, EthereumProvider } from "../../client";
+import { createCustomClient, ProviderClientConfig, EthereumProvider } from "@/client";
 
 export type BuildUserOpParameters = {
   account: Address;

@@ -1,5 +1,5 @@
 import { type Hex, decodeAbiParameters, encodeAbiParameters } from "viem";
-import { KeystoreConfig } from "../../config";
+import { KeystoreConfig } from "@/config";
 
 
 export type CoinbaseSmartWalletConfigData = {
