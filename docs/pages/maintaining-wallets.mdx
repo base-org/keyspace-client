@@ -27,7 +27,7 @@ To activate your wallet on a new chain, it must be freshly initialized by the or
 
 If the signer was in the initial configuration, it's already authorized to pay gas fees on the new chain. It can sync to the latest configuration from the master chain and start signing transactions.
 
-If the signer was added to the configuration at any point, it will not have permission to pay gas fees on the new chain. The signer is back in the same situation they were in [when they were added to the wallet](/using-new-signers): the wallet vendor or an another existing signer can help them get synced, or they can sync themselves from another chain with assets.
+If the signer was added to the configuration at any point, it will not have permission to pay gas fees on the new chain. The signer is back in the same situation they were in [when they were added to the wallet](/using-new-signers): the wallet vendor or another existing signer can help them get synced, or they can sync themselves from another chain with assets.
 
 In either case, it's possible that syncing no longer works because hard forks have occurred on the master chain, the new replica chain, or any chain in between. If that has happened, the wallet can still be configured by replaying every configuration update from the master chain as a preconfirmation on the new chain. Assuming the wallet has upgraded its implementation to handle the hard forks, the preconfirmations will also upgrade the implementation on the new chain. A sync can then be performed to bring the wallet up to date and allow user operations to be executed.
 
